@@ -44,5 +44,12 @@
       "typedRoutes": true,
       "reactCompiler": true
     }
+  },
+
+  "expo": {
+    "extra": {
+      "supabaseProjectId": "${SUPABASE_PROJECT_ID}",
+      "supabaseAnonKey": "${SUPABASE_ANON_KEY}"
+    }
   }
 }
