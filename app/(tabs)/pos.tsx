@@ -1,25 +1,47 @@
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
+
     ScrollView,
-    Text,
-    StyleSheet,
     View,
+    Text,
+    Alert,
     KeyboardAvoidingView,
     Platform,
-    Alert,
+    TouchableWithoutFeedback, Keyboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+
 import ItemSearch from '@/components/POS/ItemSearch';
 import PriceSummary from '@/components/POS/PriceSummary';
 import ClientInfo from '@/components/POS/ClientInfo';
 import CheckoutButton from '@/components/POS/Checkout';
 import CartList from '@/components/POS/CartList';
 
+type Item = {
+    id: string;
+    name: string;
+    sku: string;
+    color?: string;
+    size?: string;
+    price: number;
+    quantity: number;
+};
+
 export default function PosScreen() {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
     const [cart, setCart] = useState<any[]>([]);
 
+    // Your custom theme colors (replace with your actual Tailwind values if defined)
+    const bg = isDark ? 'bg-black' : 'bg-cream'; // or bg-[#FAF9F6] if not using Tailwind custom color
+    const cardBg = isDark ? 'bg-[#1A1A1A]' : 'bg-white'; // replace with your cardlight/carddark
+    const textPrimary = isDark ? 'text-white' : 'text-navy';
+
     const handleAddItem = (item: Item) => {
-        if (item.quantity === 0) return;               // out of stock
+        if (item.quantity === 0) return;
 
         setCart((prev) => {
             const existing = prev.find((i) => i.id === item.id);
@@ -28,8 +50,9 @@ export default function PosScreen() {
 
             if (!canAdd) {
                 Alert.alert(
-                    "Stock limit",
-                    `Only ${item.quantity} ${item.name} in stock.`
+                    'Stock limit',
+                    `Only ${item.quantity} ${item.name}(s) in stock.`,
+                    [{ text: 'OK' }],
                 );
                 return prev;
             }
@@ -50,7 +73,6 @@ export default function PosScreen() {
                     size: item.size,
                     price: item.price,
                     qty: 1,
-                    // keep the original stock for reference (optional)
                     maxQty: item.quantity,
                 },
             ];
@@ -61,11 +83,13 @@ export default function PosScreen() {
         setCart((prev) => {
             const existing = prev.find((i) => i.id === id);
             if (!existing) return prev;
+
             if (existing.qty > 1) {
                 return prev.map((i) =>
                     i.id === id ? { ...i, qty: i.qty - 1 } : i
                 );
             }
+
             return prev.filter((i) => i.id !== id);
         });
     };
@@ -79,73 +103,51 @@ export default function PosScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView className={`flex-1 ${bg}`}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+
+            {/* Wrap everything in KeyboardAvoidingView */}
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                className="flex-1"
+                // Critical fix for iOS when inside SafeAreaView
             >
-                <ScrollView
-                    contentContainerStyle={styles.scroll}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    <Text style={styles.title}>Point Of Sale</Text>
+                {/* Dismiss keyboard when tapping outside */}
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView
+                        className="flex-1"
+                        contentContainerClassName="px-4 pb-12" // Extra bottom padding!
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                        bounces={true}
+                    >
+                        <Text className={`text-3xl font-bold text-center mb-6 ${textPrimary}`}>
+                            Point Of Sale
+                        </Text>
 
-                    <View style={styles.card}>
-                        <ItemSearch onAddItem={handleAddItem} />
-                    </View>
+                        <View className={`rounded-2xl p-4 mb-4 ${cardBg} shadow-lg`}>
+                            <ItemSearch onAddItem={handleAddItem} />
+                        </View>
 
-                    <View style={styles.card}>
-                        <CartList cart={cart} onRemoveItem={handleRemoveItem} />
-                    </View>
+                        <View className={`rounded-2xl p-4 mb-4 ${cardBg} shadow-lg`}>
+                            <CartList cart={cart} onRemoveItem={handleRemoveItem} />
+                        </View>
 
-                    <View style={styles.card}>
-                        <PriceSummary cart={cart} />
-                    </View>
+                        <View className={`rounded-2xl p-4 mb-4 ${cardBg} shadow-lg`}>
+                            <PriceSummary cart={cart} />
+                        </View>
 
-                    <View style={styles.card}>
-                        <ClientInfo />
-                    </View>
+                        {/* Client Info — this is usually where inputs are */}
+                        <View className={`rounded-2xl p-4 mb-6 ${cardBg} shadow-lg`}>
+                            <ClientInfo />
+                        </View>
 
-                    <View style={styles.checkoutContainer}>
-                        <CheckoutButton onCheckout={handleCheckout} />
-                    </View>
-                </ScrollView>
+                        <View className="mt-6 mb-10">
+                            <CheckoutButton />
+                        </View>
+                    </ScrollView>
+                </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F9FAFB',
-    },
-    scroll: {
-        paddingHorizontal: 16,
-        paddingBottom: 100,
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: '700',
-        textAlign: 'center',
-        color: '#222',
-        marginTop: 16,
-        marginBottom: 20,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    checkoutContainer: {
-        marginTop: 10,
-        marginBottom: 30,
-    },
-});

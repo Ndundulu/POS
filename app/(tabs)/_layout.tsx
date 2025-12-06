@@ -1,12 +1,13 @@
-// app/(tabs)/_layout.tsx
-import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useContext } from 'react';
-import { ThemeContext } from '@/src/lib/ThemeProvider';
+// app/(tabs)/layout.tsx
+import React from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { TouchableOpacity, Platform, ColorSchemeName } from "react-native";
+import * as Haptics from "expo-haptics";
+import { useKeyboard } from "@/src/hooks/useKeyboard";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "react-native";
 
 function HapticTab(props: any) {
     return (
@@ -21,69 +22,81 @@ function HapticTab(props: any) {
 }
 
 export default function TabLayout() {
-    const { isDark } = useContext(ThemeContext);
-    const tint = isDark ? '#0A84FF' : '#007AFF';
-    const bg = isDark ? '#1c1c1e' : '#ffffff';
+    const colorScheme = useColorScheme(); // 'light' | 'dark' | null
+    const isDark = colorScheme === "dark";
+    const { isKeyboardVisible } = useKeyboard();
+    const insets = useSafeAreaInsets();
+
+    const isCompact = isKeyboardVisible;
+    const extraBottomPadding = Platform.OS === "android" ? insets.bottom : 0;
 
     return (
-        <Tabs
-            screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: tint,
-                tabBarInactiveTintColor: isDark ? '#888' : '#666',
-                tabBarButton: HapticTab,
-                tabBarStyle: {
-                    position: 'absolute',
-                    bottom: 25,
-                    left: 20,
-                    right: 20,
-                    height: 70,
-                    borderRadius: 35,
-                    backgroundColor: bg,
-                    borderTopWidth: 0,
-                    elevation: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 16,
-                    paddingBottom: 0,
-                    paddingTop: 8,
-                },
-                tabBarItemStyle: { padding: 5 },
-                tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-                tabBarBackground: () => (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: bg, borderRadius: 35 }]} />
-                ),
-            }}
-        >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Home',
-                    tabBarIcon: ({ color }) => <Ionicons name="home" size={26} color={color} />,
+        <>
+            <StatusBar style={isDark ? "light" : "dark"} />
+
+            <Tabs
+                screenOptions={{
+                    headerShown: false,
+                    tabBarButton: HapticTab,
+
+                    tabBarActiveTintColor: isDark ? "#60a5fa" : "#283A55",
+                    tabBarInactiveTintColor: isDark ? "#666666" : "#8E8E93",
+
+                    tabBarStyle: {
+                        backgroundColor: isDark ? "#000000" : "#FAF9F6", // cream ≈ #FAF9F6 or adjust to your exact cream
+                        borderTopColor: isDark ? "#38383A" : "#D4D4D4",
+                        borderTopWidth: 0.5,
+                        height: (isCompact ? 50 : 60) + extraBottomPadding,
+                        paddingBottom: isCompact
+                            ? 6 + extraBottomPadding
+                            : Platform.OS === "ios"
+                                ? 20
+                                : 8 + extraBottomPadding,
+                        paddingTop: 8,
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                    },
+
+                    tabBarLabelStyle: {
+                        fontSize: 10.5,
+                        fontWeight: "600",
+                        marginTop: 2,
+                        opacity: isCompact ? 0 : 1,
+                        height: isCompact ? 0 : "auto",
+                    },
                 }}
-            />
-            <Tabs.Screen
-                name="pos"
-                options={{
-                    title: 'POS',
-                    tabBarIcon: ({ color }) => <Ionicons name="card" size={26} color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="stock"
-                options={{
-                    title: 'stock',
-                    tabBarIcon: ({ color }) => <Ionicons name="cube" size={26} color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="settings"
-                options={{
-                    title: 'Settings',
-                    tabBarIcon: ({ color }) => <Ionicons name="settings" size={26} color={color} />,
-                }}
-            />
-        </Tabs>
+            >
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        title: "Home",
+                        tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="pos"
+                    options={{
+                        title: "POS",
+                        tabBarIcon: ({ color }) => <Ionicons name="card" size={24} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="stock"
+                    options={{
+                        title: "Stock",
+                        tabBarIcon: ({ color }) => <Ionicons name="cube" size={24} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="settings"
+                    options={{
+                        title: "Settings",
+                        tabBarIcon: ({ color }) => <Ionicons name="settings" size={24} color={color} />,
+                    }}
+                />
+            </Tabs>
+        </>
     );
 }

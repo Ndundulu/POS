@@ -1,5 +1,6 @@
+// src/components/POS/PriceSummaryWithDiscountAndTax.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
 type DiscountType = 'percent' | 'fixed';
 type TaxType = 'exclusive' | 'inclusive';
@@ -9,13 +10,16 @@ interface Props {
 }
 
 export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
     const [discountType, setDiscountType] = useState<DiscountType>('percent');
     const [discountInput, setDiscountInput] = useState<string>('');
     const [taxType, setTaxType] = useState<TaxType>('exclusive');
 
-    const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const discountValue = parseFloat(discountInput) || 0;
+
     let discountAmount = 0;
     let discountLabel = '';
 
@@ -25,12 +29,11 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
             discountLabel = `${discountValue}%`;
         } else {
             discountAmount = discountValue;
-            discountLabel = `$${discountValue.toFixed(2)}`;
+            discountLabel = `Ksh${discountValue.toFixed(2)}`;
         }
     }
 
     const afterDiscount = subtotal - discountAmount;
-
     const TAX_RATE = 0.16;
     let tax = 0;
     let taxableAmount = 0;
@@ -46,217 +49,126 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
     const total = afterDiscount + (taxType === 'exclusive' ? tax : 0);
 
     const toggleDiscountType = () => {
-        setDiscountType(prev => (prev === 'percent' ? 'fixed' : 'percent'));
+        setDiscountType(p => (p === 'percent' ? 'fixed' : 'percent'));
         setDiscountInput('');
     };
-
-    const toggleTaxType = () => {
-        setTaxType(prev => (prev === 'exclusive' ? 'inclusive' : 'exclusive'));
-    };
+    const toggleTaxType = () =>
+        setTaxType(p => (p === 'exclusive' ? 'inclusive' : 'exclusive'));
 
     return (
-        <View style={styles.container}>
-            {/* === CONTROLS ROW === */}
-            <View style={styles.controlsRow}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.controlLabel}>Discount:</Text>
-                    <View style={styles.inputContainer}>
+        <View className="my-4 px-1">
+            {/* DISCOUNT */}
+            <View className="flex-row items-center justify-between mb-2">
+                <Text className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                    Discount:
+                </Text>
+                <View className="flex-1 max-w-[120px] ml-2">
+                    <View
+                        className={`flex-row border rounded-lg overflow-hidden ${
+                            isDark ? 'bg-[#2a2a2a] border-gray-600' : 'bg-[#EDEEDA] border-gray-300'
+                        }`}
+                    >
                         <TextInput
-                            style={styles.textInput}
+                            className={`flex-1 px-2 py-1 text-right text-base ${
+                                isDark ? 'text-white' : 'text-gray-900'
+                            }`}
                             placeholder={discountType === 'percent' ? '10' : '5.00'}
+                            placeholderTextColor={isDark ? '#777' : '#9ca3af'}
                             keyboardType="numeric"
                             value={discountInput}
                             onChangeText={setDiscountInput}
                         />
-                        <TouchableOpacity onPress={toggleDiscountType} style={styles.typeButton}>
-                            <Text style={styles.typeButtonText}>
-                                {discountType === 'percent' ? '%' : '$'}
+                        <TouchableOpacity
+                            onPress={toggleDiscountType}
+                            className={`w-9 justify-center items-center ${
+                                isDark ? 'bg-gray-800' : 'bg-gray-100'
+                            }`}
+                        >
+                            <Text
+                                className={`text-xs font-bold ${
+                                    isDark ? 'text-gray-300' : 'text-gray-600'
+                                }`}
+                            >
+                                {discountType === 'percent' ? '%' : 'Ksh'}
                             </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.controlLabel}>Tax (16%):</Text>
-                    <TouchableOpacity onPress={toggleTaxType} style={styles.toggleButton}>
-                        <Text style={styles.toggleButtonText}>
-                            {taxType === 'exclusive' ? 'Excl.' : 'Incl.'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
             </View>
 
-            <View style={styles.divider} />
+            {/* DIVIDER */}
+            <View className={`${isDark ? 'bg-gray-600' : 'bg-gray-300'} h-[1px] my-2`} />
 
-            {/* === PRICE BREAKDOWN === */}
-            <View style={styles.row}>
-                <Text style={styles.label}>Subtotal:</Text>
-                <Text style={styles.value}>${subtotal.toFixed(2)}</Text>
+            {/* BREAKDOWN */}
+            <View className="flex-row justify-between my-1">
+                <Text className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                    Subtotal:
+                </Text>
+                <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Ksh{subtotal.toFixed(2)}
+                </Text>
             </View>
 
             {discountAmount > 0 && (
-                <View style={styles.row}>
-                    <Text style={styles.label}>Discount ({discountLabel}):</Text>
-                    <Text style={[styles.value, styles.discount]}>-${discountAmount.toFixed(2)}</Text>
+                <View className="flex-row justify-between my-1">
+                    <Text className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                        Discount ({discountLabel}):
+                    </Text>
+                    <Text className={`text-base italic ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                        -Ksh{discountAmount.toFixed(2)}
+                    </Text>
                 </View>
             )}
 
-            <View style={styles.divider} />
+            <View className={`${isDark ? 'bg-gray-600' : 'bg-gray-300'} h-[1px] my-2`} />
 
-            <View style={styles.row}>
-                <Text style={styles.label}>After Discount:</Text>
-                <Text style={styles.value}>${afterDiscount.toFixed(2)}</Text>
+            <View className="flex-row justify-between my-1">
+                <Text className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                    After Discount:
+                </Text>
+                <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Ksh{afterDiscount.toFixed(2)}
+                </Text>
             </View>
 
-            {/* === COMPACT TAX ROW (fits on one line) === */}
-            <View style={styles.compactTaxRow}>
-                <View style={styles.taxLabelContainer}>
-                    <Text style={styles.label}>Tax (16%)</Text>
-                    <TouchableOpacity onPress={toggleTaxType} style={styles.inlineToggle}>
-                        <Text style={styles.inlineToggleText}>
+            {/* TAX */}
+            <View className="flex-row justify-between items-center my-1">
+                <View className="flex-row items-center space-x-1">
+                    <Text className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                        Tax (16%)
+                    </Text>
+                    <TouchableOpacity
+                        onPress={toggleTaxType}
+                        className={`px-1 py-0.5 border rounded ${
+                            isDark ? 'bg-[#1e3a8a] border-blue-500' : 'bg-[#e6f2ff] border-blue-700'
+                        }`}
+                    >
+                        <Text className={`text-[10px] font-semibold uppercase text-blue-600`}>
                             {taxType === 'exclusive' ? 'excl.' : 'incl.'}
                         </Text>
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.value}>
-                    {taxType === 'exclusive' ? '+' : ''}${tax.toFixed(2)}
+                <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {taxType === 'exclusive' ? '+' : ''}Ksh{tax.toFixed(2)}
                 </Text>
             </View>
 
-            <View style={styles.divider} />
+            <View className={`${isDark ? 'bg-gray-600' : 'bg-gray-300'} h-[1px] my-2`} />
 
-            <View style={styles.row}>
-                <Text style={styles.totalLabel}>TOTAL:</Text>
-                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            {/* TOTAL */}
+            <View className="flex-row justify-between my-1">
+                <Text className="text-lg font-bold text-blue-600">TOTAL:</Text>
+                <Text className="text-lg font-bold text-blue-600">Ksh{total.toFixed(2)}</Text>
             </View>
 
+            {/* INCLUSIVE NOTE */}
             {taxType === 'inclusive' && (
-                <View style={styles.note}>
-                    <Text style={styles.noteText}>
-                        * Tax included: ${taxableAmount.toFixed(2)} (base) + ${tax.toFixed(2)} (tax)
+                <View className="mt-2 px-1">
+                    <Text className={`text-xs italic ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                        * Tax included: Ksh{taxableAmount.toFixed(2)} (base) + Ksh{tax.toFixed(2)} (tax)
                     </Text>
                 </View>
             )}
         </View>
     );
 }
-
-/* ------------------------------------------------- */
-/* Styles                                            */
-/* ------------------------------------------------- */
-const styles = StyleSheet.create({
-    container: { marginVertical: 16, paddingHorizontal: 4 },
-
-    // ── COMPACT CONTROLS ROW (Discount + Tax on ONE line) ─────────────────────
-    controlsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12,
-        marginHorizontal: 16,
-        marginTop: 12,
-    },
-    inputGroup: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    controlLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-        minWidth: 44,
-    },
-    inputContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        backgroundColor: '#fff',
-        overflow: 'hidden',
-    },
-    textInput: {
-        flex: 1,
-        paddingHorizontal: 8,
-        paddingVertical: 6,
-        fontSize: 14,
-        color: '#111827',
-        textAlign: 'right',
-    },
-    typeButton: {
-        width: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-    },
-    typeButtonText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#4b5563',
-    },
-    toggleButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        backgroundColor: '#eff6ff',
-        borderRadius: 6,
-        minWidth: 56,
-        alignItems: 'center',
-    },
-    toggleButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#1d4ed8',
-    },
-
-    // ── Rest of your original styles (unchanged) ─────────────────────────────
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginVertical: 4,
-    },
-    label: { fontSize: 16, color: '#333' },
-    value: { fontSize: 16, fontWeight: '600' },
-    discount: { color: '#d00' },
-    divider: { height: 1, backgroundColor: '#ddd', marginVertical: 10 },
-
-    // Compact Tax Row (kept for compatibility)
-    compactTaxRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginVertical: 4,
-    },
-    taxLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    inlineToggle: {
-        backgroundColor: '#e6f2ff',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: '#0066cc',
-    },
-    inlineToggleText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#0066cc',
-        textTransform: 'uppercase',
-    },
-
-    totalLabel: { fontSize: 18, fontWeight: 'bold' },
-    totalValue: { fontSize: 18, fontWeight: 'bold', color: '#0066cc' },
-    note: {
-        marginTop: 8,
-        paddingHorizontal: 4,
-    },
-    noteText: {
-        fontSize: 12,
-        color: '#666',
-        fontStyle: 'italic',
-    },
-});

@@ -1,78 +1,82 @@
-import React, { useEffect } from 'react';
-import {View, Text, StyleSheet, Animated} from 'react-native';
-import {supabase} from "@/src/lib/supabaseClient";
-import Customers from "@/components/Customers";
-import ScrollView = Animated.ScrollView;
+// app/(tabs)/index.tsx
+import React, { useState } from 'react';
+import { ScrollView, View, Text} from 'react-native';
+import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import TodaysSales from '@/components/home/stats/TodaysSales';
+import TotalProducts from '@/components/home/stats/totalproducts';
+import LowStock from '@/components/home/stats/lowStock';
+import CustomersCard from '@/components/home/stats/CustomersCard';
+import Orders from '@/components/home/stats/orders';
+import CustomerInteraction from '@/components/home/stats/customerInteraction';
+import SalesOverview from '@/components/home/salesOverview';
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
-interface Category {
-    id: string;
-    name: string;
-    created_at: string;
-}
-
-export default function App() {
-
+export default function HomeScreen() {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const [userName, setUserName] = useState('User');
+    const insets = useSafeAreaInsets()
 
     return (
-        <ScrollView>
-            <Text style={{paddingTop: 30}}>Alex Kitheka</Text>
-        <View style={styles.container}>
-            <View style={styles.cardGrid} >
-                <View style={{flex:1, flexDirection:"row",gap: 16}}>
-                    <Customers label= "Today's Sales"  value={900000} currency="Ksh" showCurrency={true} />
-                    <Customers label= "Total Products" value={100}/>
-                </View>
-                <View style={{flex:1, flexDirection:"row", gap: 16}}>
-                    <Customers label= "Low Stock" value={9000}/>
-                    <Customers label= "Customers" value={100}/>
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-black' : 'bg-[#EDEEDA]'}`}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 40,
+                }}            >
+                {/* Greeting */}
+                <View className="px-4 mb-2 mt-8">
+                    <Text
+                        className={`text-3xl font-bold tracking-tight ${
+                            isDark ? 'text-white' : 'text-black'
+                        }`}
+                    >
+                        Hello, {userName}!
+                    </Text>
                 </View>
 
-            </View>
-        </View>
-            <View style={styles.overViewContainer}>
-                <Text style={styles.overViewTitle}>Overview</Text>
-            </View>
-        </ScrollView>
+                {/* Top Row: Today's Sales + Total Products */}
+                <View className="flex-row justify-between px-4 mb-3">
+                    <View className="flex-1 mx-1">
+                        <TodaysSales />
+                    </View>
+                    <View className="flex-1 mx-1">
+                        <CustomerInteraction />
+                    </View>
+                </View>
+
+                {/* Middle Row: Low Stock + Customers */}
+                <View className="flex-row justify-between px-4 mb-3">
+                    <View className="flex-1 mx-1">
+                        <Orders />
+                    </View>
+                    <View className="flex-1 mx-1">
+                        <CustomersCard />
+                    </View>
+                </View>
+
+                {/* Sales Overview Chart */}
+                <View className="my-4">
+                    <SalesOverview />
+                </View>
+
+                {/* Bottom Row: Orders + Customer Interaction */}
+                <View className="flex-row justify-between px-4 mb-6">
+                    <View className="flex-1 mx-1">
+                        <LowStock />
+                    </View>
+                    <View className="flex-1 mx-1">
+                        <TotalProducts />
+                    </View>
+                </View>
+
+                {/* Extra space for tab bar */}
+            </ScrollView>
+        </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-
-    container: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        padding: 16,
-        gap: 16
-    },
-
-    cardGrid: {
-
-        flexDirection: "column",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-
-    },
-
-    overViewContainer: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 20,
-      padding: 16,
-      marginBottom: 24,
-      elevation: 3,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      shadowOffset: {width: 0, height: 2},
-    },
-
-    overViewTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#111827",
-    }
-
-
-
-})

@@ -1,34 +1,45 @@
+// components/stock/BackButton.tsx
 import React from "react";
-import {Text, StyleSheet, TouchableOpacity} from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import Animated, { useSharedValue, withSpring, useAnimatedStyle } from "react-native-reanimated";
 import { ChevronLeft } from "lucide-react-native";
 
 const AnimatedTouch = Animated.createAnimatedComponent(TouchableOpacity);
-const PALETTE = { gold: "#b89d63" };
 
-export default function BackButton({ onPress }: { onPress: () => void }) {
+interface BackButtonProps {
+    onPress: () => void;
+    className?: string;        // ← ADD THIS
+    // …or even better:  ...rest: any
+}
+
+export default function BackButton({
+                                       onPress,
+                                       className = ""           // ← AND THIS (with default)
+                                   }: BackButtonProps) {
     const scale = useSharedValue(1);
-    const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
 
     return (
         <AnimatedTouch
             onPressIn={() => (scale.value = withSpring(0.92))}
             onPressOut={() => (scale.value = withSpring(1))}
             onPress={onPress}
-            style={style}
+            style={animatedStyle}
+            activeOpacity={1}
+            className={`absolute top-16 left-6 z-50 ${className}`}   // ← NOW IT WORKS
         >
-            <Text style={styles.text}>
-                <ChevronLeft size={18} /> Back
-            </Text>
+            <View className="
+        w-7 h-7
+        bg-white/90 dark:bg-black/80
+        backdrop-blur-lg rounded-full
+        items-center justify-center
+        shadow-2xl shadow-black/30
+        border border-white/20 dark:border-black/20
+      ">
+                <ChevronLeft size={20} color="#b89d63" strokeWidth={3} />
+            </View>
         </AnimatedTouch>
     );
 }
-
-const styles = StyleSheet.create({
-    text: {
-        fontSize: 15,
-        fontWeight: "600",
-        marginBottom: 8,
-        color: PALETTE.gold,
-    },
-});

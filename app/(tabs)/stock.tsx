@@ -1,16 +1,16 @@
 // src/screens/StockScreen.tsx
-import React, { useEffect, useState, useContext, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
-    SafeAreaView,
     View,
     Text,
     FlatList,
     ActivityIndicator,
     StatusBar,
+    BackHandler, useColorScheme,
 } from "react-native";
-import { ThemeContext } from "@/src/lib/ThemeProvider";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from "@/src/lib/supabaseClient";
-import Animated, { useSharedValue, withSpring, useAnimatedStyle } from "react-native-reanimated";
+import{ useSharedValue, withSpring, useAnimatedStyle } from "react-native-reanimated";
 import { Plus } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { SearchBar } from "react-native-elements";
@@ -23,16 +23,19 @@ import AddModal from "@/components/stock/AddModal";
 import BackButton from "@/components/stock/BackButton";
 import FAB from "@/components/ui/FAB";
 
-const PALETTE = { gold: "#b89d63", cream: "#EDEZDA", navy: "#283A55" };
+const PALETTE = { gold: "#b89d63", cream: "#EDEEDA", navy: "#283A55" };
 
 export default function StockScreen() {
-    const { isDark } = useContext(ThemeContext);
-    const bg = isDark ? "#111" : PALETTE.cream;
-    const cardBg = isDark ? "#1e1e1e" : "#fff";
-    const textPrimary = isDark ? "#fff" : PALETTE.navy;
-    const textSecondary = isDark ? "#bbb" : "#555";
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    // Dynamic theme classes
+// StockScreen.tsx – ONLY replace these 4 lines:
+    const bg = isDark ? 'bg-black' : 'bg-[#EDEEDA]';
+    const cardBg       = isDark ? "#1e1e1e" : "#A6B9A8";        // was "bg-[#1e1e1e]" / "bg-[#A6B9A8]"
+    const textPrimary  = isDark ? "#ffffff" : "#283A55";        // was "text-white" / "text-[#283A55]"
+    const textSecondary = isDark ? "#bbbbbb" : "#555555";      // was "text-[#bbb]" / "text-[#555]"
 
-    // Data
+    // Data states
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
@@ -40,11 +43,11 @@ export default function StockScreen() {
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-    // Modal
+    // Modal & Tabs
     const [modalVisible, setModalVisible] = useState(false);
     const [activeTab, setActiveTab] = useState<"category" | "product" | "item">("category");
 
-    // Form States
+    // Form states
     const [catName, setCatName] = useState("");
     const [prodName, setProdName] = useState("");
     const [prodDesc, setProdDesc] = useState("");
@@ -59,11 +62,31 @@ export default function StockScreen() {
     // Search
     const [searchQuery, setSearchQuery] = useState("");
 
-    // FAB
+    // FAB Animation
     const fabScale = useSharedValue(1);
     const fabStyle = useAnimatedStyle(() => ({
         transform: [{ scale: fabScale.value }],
     }));
+
+    // Back Handler
+    useEffect(() => {
+        const onBackPress = () => {
+            if (selectedProduct) {
+                setSelectedProduct(null);
+                setSearchQuery("");
+                return true;
+            } else if (selectedCategory) {
+                setSelectedCategory(null);
+                setProducts([]);
+                setSearchQuery("");
+                return true;
+            }
+            return false;
+        };
+
+        const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+        return () => subscription.remove();
+    }, [selectedCategory, selectedProduct]);
 
     // Load Data
     useEffect(() => {
@@ -99,7 +122,7 @@ export default function StockScreen() {
         setLoading(false);
     };
 
-    // Add Functions
+    // Add Functions (unchanged logic)
     const addCategory = async () => {
         if (!catName.trim()) return Toast.show({ type: "error", text1: "Name required" });
         const { data, error } = await supabase
@@ -158,7 +181,6 @@ export default function StockScreen() {
                 buying_price: buyingPrice,
                 size: itemSize.trim() || null,
                 quantity: qty,
-                // status is set by Supabase trigger
             })
             .select()
             .single();
@@ -166,8 +188,6 @@ export default function StockScreen() {
         if (error) return Toast.show({ type: "error", text1: "Failed", text2: error.message });
 
         setItems((p) => [...p, data]);
-
-        // Reset
         setItemColor("");
         setItemMotif("");
         setItemSku("");
@@ -175,12 +195,11 @@ export default function StockScreen() {
         setItemBuyingPrice("");
         setItemSize("");
         setItemQty("");
-
         setModalVisible(false);
         Toast.show({ type: "success", text1: "Item added!" });
     };
 
-    // Search
+    // Filtered Data
     const filteredData = useMemo(() => {
         const list = selectedProduct ? items : selectedCategory ? products : categories;
         if (!searchQuery.trim()) return list;
@@ -195,23 +214,27 @@ export default function StockScreen() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: bg }}>
+            <View className={`flex-1 justify-center items-center ${isDark ? "bg-black" : "bg-[#EDEEDA]"}`}>
                 <ActivityIndicator size="large" color={PALETTE.gold} />
-                <Text style={{ marginTop: 12, color: textSecondary }}>Loading…</Text>
+                <Text className={`mt-3 ${textSecondary}`}>Loading…</Text>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <SafeAreaView className={`flex-1 ${bg}`}>
+            <StatusBar barStyle={isDark ? "dark-content" : "dark-content"} />
 
             {/* Title */}
-            <View style={{ padding: 18, paddingTop: 10 }}>
-                <Text style={{ fontSize: 30, fontWeight: "800", color: textPrimary, marginTop: 15 }}>
+            <View className="px-5 flex-col">
+                <Text
+                    className={`
+                    text-4xl font-extrabold mb-4
+                    ${isDark ? "text-primary-light" : "text-primary"}
+                  `}
+                >
                     {selectedProduct?.name || selectedCategory?.name || "Stock Inventory"}
                 </Text>
-            </View>
 
             {/* Back Button */}
             {(selectedCategory || selectedProduct) && (
@@ -226,22 +249,26 @@ export default function StockScreen() {
                             setSearchQuery("");
                         }
                     }}
+                    className="absolute top-12 left-5 z-50"   // ← This is the magic value
+
                 />
             )}
+           </View>
 
             {/* Search Bar */}
             {(selectedCategory || selectedProduct) && (
-                <View style={{ paddingHorizontal: 18, marginBottom: 12 }}>
+                <View className="px-5 mb-3 mt-4">
                     <SearchBar
                         placeholder={selectedProduct ? "Search items..." : "Search products..."}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         lightTheme={!isDark}
                         platform="default"
-                        inputContainerStyle={{ backgroundColor: cardBg, borderRadius: 8 }}
-                        containerStyle={{ backgroundColor: "transparent", padding: 0 }}
-                        inputStyle={{ color: textPrimary }}
-                        placeholderTextColor={textSecondary}
+                        inputContainerStyle={{ backgroundColor: isDark ? "#1e1e1e" : "#A6B9A8", borderRadius: 8 }}
+                        containerStyle={{ backgroundColor: "transparent", padding: 0, borderTopWidth: 0, borderBottomWidth: 0 , marginTop: 20}}
+                        inputStyle={{ color: isDark ? "#fff" : "#283A55" }}
+                        placeholderTextColor={isDark ? "#bbb" : "#666"}
+                        round
                     />
                 </View>
             )}
@@ -250,7 +277,7 @@ export default function StockScreen() {
             <FlatList
                 data={filteredData}
                 keyExtractor={(i) => i.id.toString()}
-                contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 120 }}
+                contentContainerClassName="px-5 pb-32"
                 renderItem={({ item }) =>
                     selectedProduct ? (
                         <ItemCard
@@ -281,7 +308,7 @@ export default function StockScreen() {
                     )
                 }
                 ListEmptyComponent={
-                    <Text style={{ textAlign: "center", marginTop: 50, color: textSecondary }}>
+                    <Text className={`text-center mt-16 ${textSecondary}`}>
                         {searchQuery ? "No results." : "Nothing here yet."}
                     </Text>
                 }
@@ -289,13 +316,15 @@ export default function StockScreen() {
 
             {/* FAB */}
             <FAB
-                style={[fabStyle, { bottom: 100, right: 20 }]}
+                style={[fabStyle, { position: "absolute", bottom: 100, right: 20 }]}
                 onPressIn={() => (fabScale.value = withSpring(0.9))}
                 onPressOut={() => (fabScale.value = withSpring(1))}
                 onPress={() => setModalVisible(true)}
-            />
+            >
+                <Plus color="white" size={28} />
+            </FAB>
 
-            {/* Modal */}
+            {/* Add Modal */}
             <AddModal
                 visible={modalVisible}
                 onClose={() => {
@@ -341,7 +370,7 @@ export default function StockScreen() {
                 itemQty={itemQty}
                 setItemQty={setItemQty}
                 addItem={addItem}
-                // Theme
+                // Theme props
                 textPrimary={textPrimary}
                 textSecondary={textSecondary}
                 cardBg={cardBg}

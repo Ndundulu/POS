@@ -1,4 +1,4 @@
-// src/components/stock/AddModal.tsx
+// src/components/stock.tsx/AddModal.tsx
 import React from "react";
 import {
     Modal,
@@ -7,7 +7,6 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
-    StyleSheet,
 } from "react-native";
 import { X } from "lucide-react-native";
 
@@ -56,33 +55,39 @@ export default function AddModal({
                                  }: any) {
     return (
         <Modal visible={visible} animationType="slide" transparent>
-            <View style={styles.overlay}>
-                <View style={[styles.content, { backgroundColor: cardBg }]}>
-                    <View style={styles.header}>
-                        <Text style={[styles.title, { color: textPrimary }]}>Add New</Text>
+            {/* Backdrop */}
+            <View className="flex-1 bg-black/50 justify-end">
+                {/* Modal Content */}
+                <View className="rounded-t-3xl max-h-[90%]" style={{ backgroundColor: cardBg }}>
+                    {/* Header */}
+                    <View className="flex-row justify-between items-center px-5 py-5 border-b border-gray-200">
+                        <Text className="text-xl font-bold" style={{ color: textPrimary }}>
+                            Add New
+                        </Text>
                         <TouchableOpacity onPress={onClose}>
                             <X size={24} color={textPrimary} />
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.tabRow}>
+                    {/* Tabs */}
+                    <View className="flex-row justify-around py-3 border-b border-gray-200">
                         {["category", "product", "item"].map((tab) => (
                             <TouchableOpacity
                                 key={tab}
                                 onPress={() => setActiveTab(tab)}
-                                style={[
-                                    styles.tab,
-                                    activeTab === tab && {
-                                        borderBottomColor: PALETTE.gold,
-                                        borderBottomWidth: 2,
-                                    },
-                                ]}
+                                className="px-5 pb-2"
+                                style={
+                                    activeTab === tab
+                                        ? { borderBottomColor: PALETTE.gold, borderBottomWidth: 2 }
+                                        : {}
+                                }
                             >
                                 <Text
+                                    className={`text-base ${
+                                        activeTab === tab ? "font-semibold" : "font-normal"
+                                    }`}
                                     style={{
                                         color: activeTab === tab ? PALETTE.gold : textSecondary,
-                                        fontWeight: activeTab === tab ? "600" : "400",
-                                        fontSize: 15,
                                     }}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -91,9 +96,11 @@ export default function AddModal({
                         ))}
                     </View>
 
+                    {/* Scrollable Form Content */}
                     <ScrollView
-                        style={{ padding: 20 }}
+                        className="px-5"
                         contentContainerStyle={{ paddingBottom: 80 }}
+                        showsVerticalScrollIndicator={false}
                     >
                         {/* === CATEGORY === */}
                         {activeTab === "category" && (
@@ -102,60 +109,74 @@ export default function AddModal({
                                     placeholder="Category Name"
                                     value={catName}
                                     onChangeText={setCatName}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
-                                <TouchableOpacity style={styles.addBtn} onPress={addCategory}>
-                                    <Text style={styles.addBtnText}>Add Category</Text>
+                                <TouchableOpacity
+                                    onPress={addCategory}
+                                    className="bg-[#b89d63] py-4 rounded-xl items-center mt-3"
+                                >
+                                    <Text className="text-white font-semibold text-base">
+                                        Add Category
+                                    </Text>
                                 </TouchableOpacity>
                             </>
                         )}
 
                         {/* === PRODUCT === */}
                         {activeTab === "product" && !selectedCategory && (
-                            <Text
-                                style={{ color: "#ef4444", textAlign: "center", marginTop: 20 }}
-                            >
+                            <Text className="text-red-500 text-center mt-6">
                                 Select a category first
                             </Text>
                         )}
+
                         {activeTab === "product" && selectedCategory && (
                             <>
-                                <Text style={[styles.label, { color: textPrimary }]}>
+                                <Text className="text-sm font-semibold mb-2" style={{ color: textPrimary }}>
                                     Category: {selectedCategory.name}
                                 </Text>
+
                                 <TextInput
                                     placeholder="Product Name"
                                     value={prodName}
                                     onChangeText={setProdName}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
+
                                 <TextInput
                                     placeholder="Description (optional)"
                                     value={prodDesc}
                                     onChangeText={setProdDesc}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     multiline
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base min-h-[100px] text-start align-top"
+                                    style={{ color: textPrimary }}
                                 />
-                                <TouchableOpacity style={styles.addBtn} onPress={addProduct}>
-                                    <Text style={styles.addBtnText}>Add Product</Text>
+
+                                <TouchableOpacity
+                                    onPress={addProduct}
+                                    className="bg-[#b89d63] py-4 rounded-xl items-center mt-3"
+                                >
+                                    <Text className="text-white font-semibold text-base">
+                                        Add Product
+                                    </Text>
                                 </TouchableOpacity>
                             </>
                         )}
 
                         {/* === ITEM === */}
                         {activeTab === "item" && !selectedProduct && (
-                            <Text
-                                style={{ color: "#ef4444", textAlign: "center", marginTop: 20 }}
-                            >
+                            <Text className="text-red-500 text-center mt-6">
                                 Select a product first
                             </Text>
                         )}
+
                         {activeTab === "item" && selectedProduct && (
                             <>
-                                <Text style={[styles.label, { color: textPrimary }]}>
+                                <Text className="text-sm font-semibold mb-2" style={{ color: textPrimary }}>
                                     Product: {selectedProduct.name}
                                 </Text>
 
@@ -163,59 +184,69 @@ export default function AddModal({
                                     placeholder="Color"
                                     value={itemColor}
                                     onChangeText={setItemColor}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="Motif"
                                     value={itemMotif}
                                     onChangeText={setItemMotif}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="SKU"
                                     value={itemSku}
                                     onChangeText={setItemSku}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="Selling Price (Ksh)"
                                     value={itemPrice}
                                     onChangeText={setItemPrice}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     keyboardType="numeric"
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="Buying Price (Ksh)"
                                     value={itemBuyingPrice}
                                     onChangeText={setItemBuyingPrice}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     keyboardType="numeric"
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="Size"
                                     value={itemSize}
                                     onChangeText={setItemSize}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
                                 <TextInput
                                     placeholder="Quantity (0 = On order)"
                                     value={itemQty}
                                     onChangeText={setItemQty}
-                                    style={[styles.input, { color: textPrimary, borderColor: "#ddd" }]}
                                     keyboardType="numeric"
                                     placeholderTextColor="#999"
+                                    className="border border-gray-300 rounded-xl px-4 py-3.5 mb-4 text-base"
+                                    style={{ color: textPrimary }}
                                 />
 
-                                {/* Status is handled by Supabase — no UI */}
-
-                                <TouchableOpacity style={styles.addBtn} onPress={addItem}>
-                                    <Text style={styles.addBtnText}>Add Item</Text>
+                                <TouchableOpacity
+                                    onPress={addItem}
+                                    className="bg-[#b89d63] py-4 rounded-xl items-center mt-6"
+                                >
+                                    <Text className="text-white font-semibold text-base">
+                                        Add Item
+                                    </Text>
                                 </TouchableOpacity>
                             </>
                         )}
@@ -225,63 +256,3 @@ export default function AddModal({
         </Modal>
     );
 }
-
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "#0008",
-        justifyContent: "flex-end",
-    },
-    content: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: "90%",
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: 20,
-        borderBottomWidth: 1,
-        borderColor: "#eee",
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: "700",
-    },
-    tabRow: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderColor: "#eee",
-    },
-    tab: {
-        paddingHorizontal: 20,
-        paddingBottom: 8,
-    },
-    input: {
-        borderWidth: 1,
-        borderRadius: 10,
-        padding: 14,
-        marginBottom: 12,
-        fontSize: 16,
-    },
-    label: {
-        fontSize: 14,
-        marginBottom: 8,
-        fontWeight: "600",
-    },
-    addBtn: {
-        backgroundColor: "#b89d63",
-        padding: 16,
-        borderRadius: 12,
-        alignItems: "center",
-        marginTop: 10,
-    },
-    addBtnText: {
-        color: "#fff",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-});

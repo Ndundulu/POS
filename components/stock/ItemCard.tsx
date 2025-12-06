@@ -1,19 +1,25 @@
 // components/stock/ItemCard.tsx
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { Tag, Box, Pencil, Trash2 } from "lucide-react-native";
+import { Tag, Box } from "lucide-react-native";
+import { Alert } from "react-native";
 
-const PALETTE = { gold: "#b89d63" };
+interface ItemCardProps {
+    item: any;
+    textPrimary: string;
+    textSecondary: string;
+    cardBg: string;
+    onDelete?: () => void;
+}
 
 export default function ItemCard({
                                      item,
                                      textPrimary,
                                      textSecondary,
                                      cardBg,
-                                     onEdit,
                                      onDelete,
-                                 }: any) {
+                                 }: ItemCardProps) {
     const handleDelete = () => {
         Alert.alert("Delete Item", `Delete "${item.color} – ${item.motif}"?`, [
             { text: "Cancel", style: "cancel" },
@@ -22,85 +28,67 @@ export default function ItemCard({
     };
 
     return (
-        <Animated.View entering={FadeIn} style={[styles.card, { backgroundColor: cardBg }]}>
-            <View style={styles.icon}>
-                <Tag size={22} color={PALETTE.gold} />
+        <Animated.View
+            entering={FadeIn}
+            className="p-3.5 rounded-xl mb-2.5 flex-row items-start min-h-[90] border border-[#b8a48c30]"
+            style={{
+                backgroundColor: cardBg,   // This fixes the Reanimated error
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.06,
+                shadowRadius: 6,
+                elevation: 3,
+            }}
+        >
+            {/* Icon */}
+            <View className="w-12 h-12 bg-[#b89d6315] rounded-lg justify-center items-center mr-3">
+                <Tag size={22} color="#b89d63" />
             </View>
 
-            <View style={{ flex: 1}}>
-                <Text style={[styles.title, { color: textPrimary }]}>
+            {/* Main Content */}
+            <View className="flex-1">
+                <Text className="text-base font-semibold mb-2.5" style={{ color: textPrimary }}>
                     {item.color} – {item.motif}
                 </Text>
-                <View style={styles.row}>
-                    <View style={styles.column}>
-                        <Text style={[styles.meta, { color: textSecondary }]}>Ksh</Text>
-                        <Text style={[styles.meta, { color: textSecondary }]}>{item.price}</Text>
-                    </View>
 
-                    <View style={styles.column}>
-                        <Text style={[styles.meta, { color: textSecondary }]}>Buy:</Text>
-                        <Text style={[styles.meta, { color: textSecondary }]}>{item.buying_price}</Text>
+                <View className="flex-row justify-between gap-5">
+                    <View className="flex-col">
+                        <Text className="text-sm" style={{ color: textSecondary }}>Ksh</Text>
+                        <Text className="text-sm" style={{ color: textSecondary }}>{item.price}</Text>
                     </View>
-
-                    <View style={styles.column}>
-                        <Text style={[styles.meta, { color: textSecondary }]}>Size</Text>
-                        <Text style={[styles.meta, { color: textSecondary }]}>
-                            <Box size={14} /> {item.size}
-                        </Text>
+                    <View className="flex-col">
+                        <Text className="text-sm" style={{ color: textSecondary }}>Buy:</Text>
+                        <Text className="text-sm" style={{ color: textSecondary }}>{item.buying_price}</Text>
+                    </View>
+                    <View className="flex-col">
+                        <Text className="text-sm" style={{ color: textSecondary }}>Size</Text>
+                        <View className="flex-row items-center">
+                            <Box size={14} color={textSecondary} />
+                            <Text className="text-sm ml-1" style={{ color: textSecondary }}>{item.size}</Text>
+                        </View>
                     </View>
                 </View>
-
             </View>
 
-            <View style={styles.rightCol}>
-                <Text style={{
-                    fontWeight: "bold",
-                    color: item.status === 'On Order' ? '#ef4444' :
-                        item.status === 'Low Stock' ? '#f59e0b' : '#10b981',
-                    textAlign: "right"
-                }}>
-                    {item.quantity} {item.status}
+            {/* Right Column */}
+            <View className="items-end ml-2">
+                <Text
+                    className="font-bold text-right"
+                    style={{
+                        color:
+                            item.status === "On Order"
+                                ? "#A43131"
+                                : item.status === "Low Stock"
+                                    ? "#C58721"
+                                    : "#1F7A55",
+                    }}
+                >
+                    {item.quantity} - {item.status}
                 </Text>
-                <Text style={[styles.sku, { color: textSecondary }]}>SKU: {item.sku}</Text>
+                <Text className="text-xs mt-0.5" style={{ color: textSecondary }}>
+                    SKU: {item.sku}
+                </Text>
             </View>
-
         </Animated.View>
     );
 }
-
-const styles = StyleSheet.create({
-    card: {
-        padding: 14,
-        borderRadius: 12,
-        marginBottom: 10,
-        flexDirection: "row",
-        alignItems: "flex-start",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        elevation: 3,
-        borderWidth: 1,
-        borderColor: "#b8a48c30",
-        position: "relative",
-        minHeight: 90,
-    },
-    icon: { width: 48, height: 48, backgroundColor: "#b89d6315", borderRadius: 10, justifyContent: "center", alignItems: "center", marginRight: 12 },
-    title: { fontSize: 16, fontWeight: "600", marginBottom: 10},
-    meta: { fontSize: 13, marginLeft: 5 },
-    rightCol: { alignItems: "flex-end", marginLeft: 8 },
-    sku: { fontSize: 11, marginTop: 2 },
-    btn: { padding: 2 },
-    row: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 20
-    },
-
-    column: {
-        flexDirection: "column",
-        alignItems: "flex-start",
-    },
-
-});
