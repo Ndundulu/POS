@@ -7,6 +7,10 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    Modal,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import {
     X,
@@ -18,27 +22,35 @@ import {
     DollarSign,
     User,
     MapPin,
+    Plus,
 } from "lucide-react-native";
 import { format } from "date-fns";
 import { supabase } from "@/src/lib/supabaseClient";
 import { useColorScheme } from "react-native";
 import { shareOrderAsPDF } from "@/components/orders/PDFReceipt";
-import {usePaymentCalculations} from "@/components/orders/hooks/usePaymentCalculations";
+import { usePaymentCalculations } from "@/components/orders/hooks/usePaymentCalculations";
 
 export default function OrderDetailsScreen({
                                                orderId,
                                                goHome,
+                                                goTo,
                                            }: {
     orderId: string;
     goHome: () => void;
+    goTo: (screen: string, param?: any) => void;  // ← Add type
 }) {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+    // Receive Payment Modal State
+    const [modalVisible, setModalVisible] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState<"cash" | "m-pesa" | "card">("cash");
+    const [paymentMethodsUsed, setPaymentMethodsUsed] = useState<string[]>([]);
+    const [note, setNote] = useState("");
     const colorScheme = useColorScheme();
     const isDark = colorScheme === "dark";
 
-    // Load order from Supabase
     useEffect(() => {
         loadOrder();
     }, [orderId]);
@@ -47,16 +59,17 @@ export default function OrderDetailsScreen({
         const { data, error } = await supabase
             .from("sales")
             .select(`
-        *,
-        discount_amount,
-        deposit,
-        tax_inclusive,
-        delivery_fee,
-        delivery_method,
-        expected_delivery_date,
-        customers(*),
-        custom_sale_items(*)
-      `)
+            *,
+            payment_mode,
+            discount_amount,
+            deposit,
+            tax_inclusive,
+            delivery_fee,
+            delivery_method,
+            expected_delivery_date,
+            customers(*),
+            custom_sale_items(*)
+        `)
             .eq("id", orderId)
             .single();
 
@@ -66,11 +79,30 @@ export default function OrderDetailsScreen({
             return;
         }
 
+        // 🔹 1. Start with payment_mode from sales
+        const methods = new Set<string>();
+
+        if (data.payment_mode) {
+            methods.add(data.payment_mode);
+        }
+
+        // 🔹 2. Fetch additional payments
+        const { data: payments } = await supabase
+            .from("payments")
+            .select("payment_method")
+            .eq("sale_id", orderId);
+
+        payments?.forEach(p => {
+            if (p.payment_method) {
+                methods.add(p.payment_method);
+            }
+        });
+
+        setPaymentMethodsUsed(Array.from(methods));
         setOrder(data);
         setLoading(false);
     };
 
-    // Shared calculation logic — same as in create/edit screen
     const calculations = usePaymentCalculations({
         items: order?.custom_sale_items || [],
         deliveryFee: order?.delivery_fee || 0,
@@ -90,26 +122,14 @@ export default function OrderDetailsScreen({
         taxInclusive,
     } = calculations;
 
-    // Mark order as completed
     const markCompleteOrAutoComplete = async () => {
         if (!order) return;
 
         if (balance <= 0) {
-            // Auto-complete if fully paid
-            const { error } = await supabase
-                .from("sales")
-                .update({ status: "completed" })
-                .eq("id", order.id);
-
-            if (!error) {
-                Alert.alert("Completed!", "Order marked as completed", [{ text: "OK", onPress: loadOrder }]);
-            } else {
-                Alert.alert("Error", "Failed to update status");
-            }
+            await updateStatus("completed");
             return;
         }
 
-        // Confirm if balance still exists
         Alert.alert(
             "Mark as Complete?",
             "This order still has a balance due. Continue anyway?",
@@ -118,21 +138,94 @@ export default function OrderDetailsScreen({
                 {
                     text: "Yes, Complete",
                     style: "destructive",
-                    onPress: async () => {
-                        const { error } = await supabase
-                            .from("sales")
-                            .update({ status: "completed" })
-                            .eq("id", order.id);
-
-                        if (!error) {
-                            Alert.alert("Success", "Order marked as completed", [{ text: "OK", onPress: loadOrder }]);
-                        } else {
-                            Alert.alert("Error", error.message);
-                        }
-                    },
+                    onPress: () => updateStatus("completed"),
                 },
             ]
         );
+    };
+
+    const updateStatus = async (newStatus: string) => {
+        const { error } = await supabase
+            .from("sales")
+            .update({ status: newStatus })
+            .eq("id", order.id);
+
+        if (!error) {
+            Alert.alert("Success", "Order status updated", [{ text: "OK", onPress: loadOrder }]);
+        } else {
+            Alert.alert("Error", error.message);
+        }
+    };
+
+    const handleReceivePayment = async () => {
+        if (!order) return;
+
+        const amount = parseFloat(paymentAmount);
+        if (isNaN(amount) || amount <= 0) {
+            Alert.alert("Invalid Amount", "Please enter a valid payment amount");
+            return;
+        }
+
+        if (amount > balance) {
+            Alert.alert("Amount Too High", `Cannot receive more than balance due (KES ${balance.toLocaleString()})`);
+            return;
+        }
+
+        try {
+            // 1. Get current user (assuming authenticated)
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            // 2. Insert payment record
+            const { error: paymentError } = await supabase
+                .from("payments")
+                .insert({
+                    sale_id: order.id,
+                    amount,
+                    payment_method: paymentMethod,
+                    received_by: user.id,
+                    note: note.trim() || null,
+                });
+
+            if (paymentError) throw paymentError;
+
+            // 3. Update deposit on sales
+            const newDeposit = (order.deposit || 0) + amount;
+            const { error: updateError } = await supabase
+                .from("sales")
+                .update({ deposit: newDeposit })
+                .eq("id", order.id);
+
+            if (updateError) throw updateError;
+
+            // 4. Auto-complete if fully paid
+            if (newDeposit >= total) {
+                await supabase
+                    .from("sales")
+                    .update({ status: "completed" })
+                    .eq("id", order.id);
+            }
+
+            Alert.alert(
+                "Payment Received!",
+                `KES ${amount.toLocaleString()} recorded successfully.${newDeposit >= total ? "\nOrder marked as completed." : ""}`,
+                [{ text: "OK", onPress: () => {
+                        setModalVisible(false);
+                        setPaymentAmount("");
+                        setNote("");
+                        loadOrder();
+                    }}]
+            );
+        } catch (err: any) {
+            Alert.alert("Error", err.message || "Failed to record payment");
+        }
+    };
+
+    const openReceiveModal = () => {
+        setPaymentAmount(balance.toString());
+        setPaymentMethod("cash");
+        setNote("");
+        setModalVisible(true);
     };
 
     const shareWithClient = async () => {
@@ -163,6 +256,17 @@ export default function OrderDetailsScreen({
     const textSecondary = isDark ? "text-slate-400" : "text-gray-600";
     const borderColor = isDark ? "border-slate-700" : "border-gray-200";
 
+    const formattedPaymentMethods =
+        paymentMethodsUsed.length > 0
+            ? paymentMethodsUsed
+                .map(m =>
+                    m === "m-pesa"
+                        ? "M-Pesa"
+                        : m.charAt(0).toUpperCase() + m.slice(1)
+                )
+                .join(" + ")
+            : "—";
+
     return (
         <View className={`flex-1 ${isDark ? "bg-[#0f172a]" : "bg-cream"}`}>
             {/* Header */}
@@ -187,14 +291,37 @@ export default function OrderDetailsScreen({
                         </Text>
                     </View>
 
-                    {order.status !== "completed" && balance <= 0 && (
-                        <TouchableOpacity
-                            onPress={markCompleteOrAutoComplete}
-                            className="bg-green-600 px-7 py-3.5 rounded-2xl shadow-lg"
-                        >
-                            <Text className="text-white font-bold">Mark as Completed</Text>
-                        </TouchableOpacity>
-                    )}
+                    <View className="flex-row gap-3">
+                        {/* Existing buttons */}
+                        {order.status !== "completed" && balance > 0 && (
+                            <TouchableOpacity
+                                onPress={openReceiveModal}
+                                className="bg-green-600 px-6 py-3.5 rounded-2xl shadow-lg flex-row items-center gap-2"
+                            >
+                                <Plus size={20} color="white" />
+                                <Text className="text-white font-bold">Payment</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {order.status !== "completed" && balance <= 0 && (
+                            <TouchableOpacity
+                                onPress={markCompleteOrAutoComplete}
+                                className="bg-green-600 px-7 py-3.5 rounded-2xl shadow-lg"
+                            >
+                                <Text className="text-white font-bold">Mark as Completed</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {/* NEW: Edit Order Button */}
+                        {order.status !== "completed" && (
+                            <TouchableOpacity
+                                onPress={() => goTo("edit", order.id)}
+                                className="bg-orange-600 px-6 py-3.5 rounded-2xl shadow-lg"
+                            >
+                                <Text className="text-white font-bold">Edit</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
 
                 {/* Client Info */}
@@ -316,8 +443,12 @@ export default function OrderDetailsScreen({
                         </View>
 
                         <View className="flex-row justify-between">
-                            <Text className={textSecondary}>Deposit Paid</Text>
-                            <Text className="font-medium text-green-600">- KES {depositAmount.toLocaleString()}</Text>
+                            <Text className={textSecondary}>
+                                {formattedPaymentMethods} • Deposit Paid
+                            </Text>
+                            <Text className="font-medium text-green-600">
+                                - KES {depositAmount.toLocaleString()}
+                            </Text>
                         </View>
 
                         <View className="flex-row justify-between pt-4 border-t-2 border-red-500">
@@ -338,6 +469,78 @@ export default function OrderDetailsScreen({
                     <Text className="text-white font-bold text-lg">Share with Client</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Receive Payment Modal */}
+            <Modal
+                visible={modalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    className="flex-1"
+                >
+                    <View className="flex-1 justify-end bg-black/50">
+                        <View className={`rounded-t-3xl ${isDark ? "bg-slate-900" : "bg-white"} p-6`}>
+                            <View className="items-center mb-4">
+                                <View className="w-20 h-1.5 bg-gray-400 rounded-full" />
+                            </View>
+
+                            <Text className={`text-2xl font-bold text-center mb-6 ${textPrimary}`}>
+                                Receive Payment
+                            </Text>
+
+                            <Text className={`text-lg mb-2 ${textSecondary}`}>Amount (KES)</Text>
+                            <TextInput
+                                value={paymentAmount}
+                                onChangeText={setPaymentAmount}
+                                keyboardType="numeric"
+                                className={`border ${borderColor} rounded-xl px-4 py-4 text-lg mb-4 ${textPrimary}`}
+                                placeholder="0"
+                            />
+
+                            <Text className={`text-lg mb-2 ${textSecondary}`}>Payment Method</Text>
+                            <View className="flex-row justify-around mb-6">
+                                {(["cash", "m-pesa", "card"] as const).map((method) => (
+                                    <TouchableOpacity
+                                        key={method}
+                                        onPress={() => setPaymentMethod(method)}
+                                        className={`px-6 py-3 rounded-xl ${paymentMethod === method ? "bg-blue-600" : "bg-gray-200 dark:bg-slate-700"}`}
+                                    >
+                                        <Text className={`font-semibold capitalize ${paymentMethod === method ? "text-white" : textPrimary}`}>
+                                            {method === "m-pesa" ? "M-Pesa" : method}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <TextInput
+                                value={note}
+                                onChangeText={setNote}
+                                placeholder="Note (optional)"
+                                className={`border ${borderColor} rounded-xl px-4 py-3 mb-6 ${textPrimary}`}
+                            />
+
+                            <View className="flex-row gap-3">
+                                <TouchableOpacity
+                                    onPress={() => setModalVisible(false)}
+                                    className="flex-1 py-4 rounded-xl border border-gray-400"
+                                >
+                                    <Text className="text-center font-bold text-gray-600">Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleReceivePayment}
+                                    className="flex-1 bg-green-600 py-4 rounded-xl"
+                                >
+                                    <Text className="text-center font-bold text-white">Receive Payment</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }

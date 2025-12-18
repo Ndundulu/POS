@@ -304,7 +304,7 @@ export default function OrdersModal({ visible, onClose }: OrdersModalProps) {
                         {/* Action Buttons */}
                         <View className="flex-row justify-between">
                             <TouchableOpacity className="flex-row items-center bg-gray-100 px-6 py-4 rounded-xl">
-                                <Mail size={20} color="#374151" />
+                                <Mail size={20} color="#374151"  />
                                 <Text className="ml-2 font-medium">Share with Client</Text>
                             </TouchableOpacity>
 

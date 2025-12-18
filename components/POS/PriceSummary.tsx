@@ -105,7 +105,7 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
                     Subtotal:
                 </Text>
                 <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Ksh{subtotal.toFixed(2)}
+                    Ksh {subtotal.toFixed(2)}
                 </Text>
             </View>
 
@@ -115,7 +115,7 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
                         Discount ({discountLabel}):
                     </Text>
                     <Text className={`text-base italic ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-                        -Ksh{discountAmount.toFixed(2)}
+                        -Ksh {discountAmount.toFixed(2)}
                     </Text>
                 </View>
             )}
@@ -127,7 +127,7 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
                     After Discount:
                 </Text>
                 <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Ksh{afterDiscount.toFixed(2)}
+                    Ksh {afterDiscount.toFixed(2)}
                 </Text>
             </View>
 
@@ -149,7 +149,7 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
                     </TouchableOpacity>
                 </View>
                 <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {taxType === 'exclusive' ? '+' : ''}Ksh{tax.toFixed(2)}
+                    {taxType === 'exclusive' ? '+' : ''}Ksh {tax.toFixed(2)}
                 </Text>
             </View>
 
@@ -157,8 +157,8 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
 
             {/* TOTAL */}
             <View className="flex-row justify-between my-1">
-                <Text className="text-lg font-bold text-blue-600">TOTAL:</Text>
-                <Text className="text-lg font-bold text-blue-600">Ksh{total.toFixed(2)}</Text>
+                <Text className="text-lg font-bold text-blue-600">TOTAL: </Text>
+                <Text className="text-lg font-bold text-blue-600">Ksh {total.toFixed(2)}</Text>
             </View>
 
             {/* INCLUSIVE NOTE */}

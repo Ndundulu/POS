@@ -1,5 +1,5 @@
 import StatCardBase from "@/components/home/StatCardBase";
 
 export default function CustomerInteraction() {
-    return <StatCardBase label="Customer Interaction" value="87%" />;
+    return <StatCardBase label="Customers Interaction" value="87%" />;
 }

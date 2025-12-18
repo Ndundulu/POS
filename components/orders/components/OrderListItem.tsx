@@ -13,6 +13,18 @@ export default function OrderListItem({ order, onPress }: any) {
     const textSecondary = isDark ? "text-slate-400" : "text-gray-600";
     const borderColor = isDark ? "border-slate-700" : "border-gray-200";
 
+    // Use the NEW accurate calculations from useOrders
+    const total = order.calculations?.total ?? 0;
+    const balance = order.calculations?.balance ?? 0;
+
+    // CustomersList name fallback chain
+    const customerName =
+        order.customer?.companyname ||
+        order.customer?.name ||
+        order.customers?.companyname ||
+        order.customers?.name ||
+        "Walk-in CustomersList";
+
     return (
         <TouchableOpacity
             onPress={onPress}
@@ -22,17 +34,17 @@ export default function OrderListItem({ order, onPress }: any) {
             <View className="flex-row justify-between items-center">
                 <View className="flex-1">
                     <Text className={`font-bold text-xl ${textPrimary}`}>
-                        {order.customers?.companyname || order.customers?.name || order.customer?.companyname || order.customer?.name}
+                        {customerName}
                     </Text>
 
                     <View className="flex-row items-center gap-4 mt-2">
                         <Text className={`text-lg font-semibold ${textPrimary}`}>
-                            KES {order.total.toLocaleString()}
+                            KES {total.toLocaleString("en-KE")}
                         </Text>
 
-                        {isOngoing && (
+                        {isOngoing && balance > 0 && (
                             <Text className="text-orange-500 font-medium">
-                                Balance: KES {order.balance.toLocaleString()}
+                                Balance: KES {balance.toLocaleString("en-KE")}
                             </Text>
                         )}
                     </View>
@@ -41,11 +53,11 @@ export default function OrderListItem({ order, onPress }: any) {
                 <View className="ml-4">
                     {isOngoing ? (
                         <View className="bg-orange-500/15 p-3 rounded-full">
-                            <Clock size={28} color="#f97316" />
+                            <Clock size={20} color="#f97316" />
                         </View>
                     ) : (
                         <View className="bg-green-500/15 p-3 rounded-full">
-                            <CheckCircle size={28} color="#10b981" />
+                            <CheckCircle size={20} color="#10b981" />
                         </View>
                     )}
                 </View>

@@ -51,6 +51,7 @@ export default function ItemSearch({ onAddItem }: Props) {
             size,
             price,
             quantity,
+            motif,
             product:product_id (
               id,
               name
@@ -117,7 +118,7 @@ export default function ItemSearch({ onAddItem }: Props) {
 
             {/* Results */}
             {!loading && items.length > 0 && (
-                <ItemList items={items} onAdd={onAddItem} />
+                <ItemList items={items} onAdd={onAddItem}  />
             )}
 
             {/* No Results */}

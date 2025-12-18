@@ -35,7 +35,7 @@ export default function AddCustomerSheet({ visible, onClose, onSuccess }: Props)
             name: form.name.trim(),
             p_number: form.p_number.trim(),
             companyname: form.companyname.trim() || null,
-            email: form.email.trim() || null,
+            email: form.email.trim().toLowerCase() || null,
             totalpurchases: '0',
         });
 

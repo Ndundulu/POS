@@ -20,7 +20,7 @@ type Props = {
     onClose: () => void;
 };
 
-type Customer = {
+type CustomersList = {
     id: string;
     name: string;
     p_number: string;
@@ -32,7 +32,7 @@ type Customer = {
 export default function CustomersList({ visible, onClose }: Props) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [customers, setCustomers] = useState<CustomersList[]>([]);
     const [search, setSearch] = useState('');
     const [addSheet, setAddSheet] = useState(false);
 
@@ -104,7 +104,7 @@ export default function CustomersList({ visible, onClose }: Props) {
                     />
                 </View>
 
-                {/* Customer List */}
+                {/* CustomersList List */}
                 <FlatList
                     data={filtered}
                     keyExtractor={item => item.id}
@@ -165,7 +165,7 @@ export default function CustomersList({ visible, onClose }: Props) {
                     )}
                 />
 
-                {/* Add Customer Bottom Sheet */}
+                {/* Add CustomersList Bottom Sheet */}
                 <AddCustomerSheet
                     visible={addSheet}
                     onClose={() => setAddSheet(false)}

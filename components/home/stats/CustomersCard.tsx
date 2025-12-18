@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import StatCardBase from '@/components/home/StatCardBase';
 import { supabase } from '@/src/lib/supabaseClient';
-import CustomersList from '@/components/home/stats/customer';
+import CustomersList from '@/components/home/stats/CustomersList';
 
 export default function CustomersCard() {
     const [modalVisible, setModalVisible] = useState(false);

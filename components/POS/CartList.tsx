@@ -17,6 +17,7 @@ export type CartItem = {
     color?: string;
     size?: string;
     maxQty?: number;
+
 };
 
 type Props = {
@@ -59,7 +60,7 @@ export default function CartList({ cart, onRemoveItem }: Props) {
                 >
                     {/* Item Name + Quantity */}
                     <Text className={`flex-1 text-base ${textPrimary} mr-3`}>
-                        {item.name} × {item.qty}
+                        {item.name} {item.color} × {item.qty}
                     </Text>
 
                     {/* Total Price */}

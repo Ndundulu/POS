@@ -56,10 +56,10 @@ export default function CreateOrderScreen({ goHome }: { goHome: () => void }) {
 
         const finalName = customerType === "company"
             ? companyName.trim() || attentionName.trim() || "Unnamed Company"
-            : clientName.trim() || "Walk-in Customer";
+            : clientName.trim() || "Walk-in CustomersList";
 
         if (!phone.trim()) return Alert.alert("Error", "Phone number is required");
-        if (!finalName) return Alert.alert("Error", "Customer name is required");
+        if (!finalName) return Alert.alert("Error", "CustomersList name is required");
         if (items.every(i => !i.description.trim())) return Alert.alert("Error", "Add at least one item");
 
         setIsSaving(true);
@@ -226,7 +226,7 @@ export async function saveOrder(order: {
                     name: order.customer.name,
                     companyname: order.customer.name, // ← NEVER NULL
                     p_number: order.customer.p_number,
-                    email: order.customer.email,
+                    email: order.customer.email!.toLowerCase(),
                     address: order.customer.address,
                     customer_type: order.customerType,
                     attention_name: order.customerType === "company" && order.attentionName ? order.attentionName : null,
