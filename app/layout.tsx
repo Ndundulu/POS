@@ -8,6 +8,7 @@ export default function RootLayout() {
     const colorScheme = useColorScheme();
     return (
         <>
+
             <StatusBar style={colorScheme === "dark"? "dark" : "light"}/> {/* "auto" respects isDark from ThemeProvider */}
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />

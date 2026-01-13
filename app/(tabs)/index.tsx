@@ -1,13 +1,18 @@
 // app/(tabs)/index.tsx
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text } from 'react-native';
+import {
+    ScrollView,
+    View,
+    Text,
+    SafeAreaView,
+    StatusBar,
+} from 'react-native';
 import { useColorScheme } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { supabase } from '@/src/lib/supabaseClient';
 
-import TodaysSales from '@/components/home/stats/TodaysSales';
+import TodaysSales from '@/components/home/stats/Sales/TodaysSales';
 import TotalProducts from '@/components/home/stats/totalproducts';
 import LowStock from '@/components/home/stats/lowStock';
 import CustomersCard from '@/components/home/stats/CustomersCard';
@@ -23,6 +28,7 @@ export default function HomeScreen() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+    // Fetch current user (only once on mount)
     useEffect(() => {
         const fetchUser = async () => {
             try {

@@ -6,6 +6,10 @@
       "supabaseAnonKey": "${SUPABASE_ANON_KEY}",
       "web": {
         "bundler": "metro"
+      },
+      "router": {},
+      "eas": {
+        "projectId": "0d9c433f-a2fb-4225-8f32-76eb8bbff426"
       }
     },
     "plugins": [

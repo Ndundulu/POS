@@ -227,13 +227,12 @@ export async function shareOrderAsPDF(order: any) {
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin: 30px 0; gap: 40px; font-size: 13.8px; color: #444;">
-            <div style="flex: 2;">
-              <strong style="color:#283A55; font-size:15px;">Bill To:</strong><br/>
-              ${customerName}<br/>
-              ${customer.attention_name ? `${customer.attention_name}<br/>` : ""}
-              ${customer.p_number || customer.phone ? `${customer.p_number || customer.phone}<br/>` : ""}
-              ${customer.address ? `${customer.address.replace(/\n/g, '<br/>')}` : `<br/><em style="color:#888;">Delivery address not set</em>`}
-            </div>
+          <div style="flex: 2;">
+          <strong style="color:#283A55; font-size:15px;">Bill To:</strong><br/>
+              ${customer.companyname ? customer.companyname + '<br/>Attn: ' + (customer.name || 'N/A') : (customer.name || 'Walk-in Customer')}<br/>
+              ${customer.p_number ? customer.p_number + '<br/>' : ''}
+              ${customer.address ? customer.address.replace(/\n/g, '<br/>') : '<br/><em style="color:#888;">Delivery address not set</em>'}
+          </div>
 
             <div style="flex: 1; text-align: right;">
               <div style="margin-bottom: 12px;">

@@ -35,7 +35,10 @@ export default function OrdersHomeScreen({ onClose }: { onClose: () => void }) {
     };
 
     const ongoing = orders.filter((o) => o.status === "ongoing");
-    const completed = orders.filter((o) => o.status === "completed");
+    const completed = orders.filter(
+        (o) => o.status === "completed" && o.has_custom_items === true
+
+        );
 
     // HOME VIEW
     if (currentView === "home") {

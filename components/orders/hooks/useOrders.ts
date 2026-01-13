@@ -10,6 +10,7 @@ export type Order = {
     expected_delivery_date: string | null;
     status: string;
     created_at: string;
+    has_custom_items: boolean; // ✅ ADD THIS
     calculations?: {
         subtotal: number;
         total: number;
@@ -21,6 +22,7 @@ export type Order = {
         taxInclusive: boolean;
     };
 };
+
 
 export function useOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -84,6 +86,7 @@ export function useOrders() {
                 created_at,
                 status,
                 delivery_method,
+                has_custom_items,
                 expected_delivery_date,
                 deposit,
                 total,
@@ -121,6 +124,7 @@ export function useOrders() {
                 delivery_method: s.delivery_method || null,
                 expected_delivery_date: s.expected_delivery_date,
                 status: s.status || "ongoing",
+                has_custom_items: s.has_custom_items ?? false,
                 created_at: s.created_at,
                 calculations,
             };

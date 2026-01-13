@@ -1,5 +1,5 @@
 // src/components/POS/PriceSummaryWithDiscountAndTax.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
 type DiscountType = 'percent' | 'fixed';
@@ -7,9 +7,16 @@ type TaxType = 'exclusive' | 'inclusive';
 
 interface Props {
     cart: any[];
+    onPricingChange: (pricing: {
+        subtotal: number;
+        discount: number;
+        tax: number;
+        total: number;
+        taxInclusive: boolean;
+    }) => void;
 }
 
-export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
+export default function PriceSummaryWithDiscountAndTax({ cart, onPricingChange }: Props) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
@@ -48,10 +55,22 @@ export default function PriceSummaryWithDiscountAndTax({ cart }: Props) {
 
     const total = afterDiscount + (taxType === 'exclusive' ? tax : 0);
 
+    // ← NEW: Emit calculated pricing to parent whenever relevant values change
+    useEffect(() => {
+        onPricingChange({
+            subtotal,
+            discount: discountAmount,
+            tax,
+            total,
+            taxInclusive: taxType === 'inclusive',
+        });
+    }, [subtotal, discountAmount, tax, total, taxType, onPricingChange]);
+
     const toggleDiscountType = () => {
         setDiscountType(p => (p === 'percent' ? 'fixed' : 'percent'));
         setDiscountInput('');
     };
+
     const toggleTaxType = () =>
         setTaxType(p => (p === 'exclusive' ? 'inclusive' : 'exclusive'));
 

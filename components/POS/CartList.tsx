@@ -1,6 +1,6 @@
 // src/components/POS/CartList.tsx
-import React, { useContext } from 'react';
-import {View, Text, FlatList, TouchableOpacity, useColorScheme} from 'react-native';
+import React from 'react';
+import { View, Text, FlatList, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LogBox } from 'react-native';
 
@@ -8,6 +8,7 @@ import { LogBox } from 'react-native';
 LogBox.ignoreLogs([
     'VirtualizedLists should never be nested inside plain ScrollViews'
 ]);
+
 export type CartItem = {
     id: string;
     name: string;
@@ -17,7 +18,6 @@ export type CartItem = {
     color?: string;
     size?: string;
     maxQty?: number;
-
 };
 
 type Props = {
@@ -34,9 +34,10 @@ const PALETTE = {
 export default function CartList({ cart, onRemoveItem }: Props) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    // Dynamic colors using Tailwind + conditional classes
+
     const textPrimary = isDark ? 'text-white' : 'text-[#283A55]';
-    const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
+    const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+    const textMuted = isDark ? 'text-gray-500' : 'text-gray-500';
     const borderColor = isDark ? 'border-[#333]' : 'border-gray-200';
     const trashColor = isDark ? '#ff4444' : '#d00';
 
@@ -53,31 +54,49 @@ export default function CartList({ cart, onRemoveItem }: Props) {
             data={cart}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View className="h-px" />} // optional subtle separator
+            ItemSeparatorComponent={() => <View className={`h-px ${borderColor}`} />}
             renderItem={({ item }) => (
-                <View
-                    className={`flex-row items-center justify-between py-3 border-b ${borderColor}`}
-                >
-                    {/* Item Name + Quantity */}
-                    <Text className={`flex-1 text-base ${textPrimary} mr-3`}>
-                        {item.name} {item.color} × {item.qty}
-                    </Text>
+                <View className={`py-4 border-b ${borderColor}`}>
+                    <View className="flex-row items-start justify-between">
+                        {/* Left: Product details */}
+                        <View className="flex-1 mr-4">
+                            {/* Product Name */}
+                            <Text className={`text-base font-medium ${textPrimary} mb-1`}>
+                                {item.name}
+                            </Text>
 
-                    {/* Total Price */}
-                    <Text className={`text-base font-semibold ${textPrimary} mr-4`}>
-                        KSh {(item.price * item.qty).toLocaleString('en-US', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                    })}
-                    </Text>
+                            {/* Variant: Color + Size */}
+                            <Text className={`text-base ${textSecondary}`}>
+                                {item.color}
+                                {item.size && ` • ${item.size}`}
+                                <Text className="font-semibold"> × {item.qty}</Text>
+                            </Text>
 
-                    {/* Remove Button */}
-                    <TouchableOpacity
-                        onPress={() => onRemoveItem(item.id)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Ionicons name="trash" size={22} color={trashColor} />
-                    </TouchableOpacity>
+                            {/* SKU below */}
+                            {item.sku && (
+                                <Text className={`text-sm mt-1 ${textMuted}`}>
+                                    {item.sku}
+                                </Text>
+                            )}
+                        </View>
+
+                        {/* Right: Total Price + Remove */}
+                        <View className="items-end">
+                            <Text className={`text-base font-semibold ${textPrimary} mb-2`}>
+                                KSh {(item.price * item.qty).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                            })}
+                            </Text>
+
+                            <TouchableOpacity
+                                onPress={() => onRemoveItem(item.id)}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="trash" size={22} color={trashColor} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             )}
         />

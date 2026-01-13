@@ -1,3 +1,4 @@
+// components/home/stats/LowStockList.tsx
 import React, { useEffect, useState } from "react";
 import {
     Modal,
@@ -29,34 +30,48 @@ interface Props {
 export default function LowStockList({ visible, onClose }: Props) {
     const [items, setItems] = useState<LowStockItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null); // ← New: track errors
 
     useEffect(() => {
         if (!visible) {
             setItems([]);
+            setError(null);
             return;
         }
 
         const fetchLowStock = async () => {
             setLoading(true);
+            setError(null);
+
             try {
-                const { data, error } = await supabase
+                console.log("Fetching low/out-of-stock items...");
+
+                const { data, error, count, status } = await supabase
                     .from("items")
                     .select(`
-            id,
-            sku,
-            color,
-            size,
-            quantity,
-            product_id:products ( name )
-          `)
-                    .lt("quantity", 6)
-                    .gt("quantity", 0)
+                        id,
+                        sku,
+                        color,
+                        size,
+                        quantity,
+                        product_id:products ( name )
+                    `, { count: "exact" }) // ← add count for debugging
+                    .lte("quantity", 5)
                     .order("quantity", { ascending: true });
 
-                if (error) throw error;
+                if (error) {
+                    console.error("Supabase error:", error);
+                    throw error;
+                }
+
+                console.log("Query successful:", { count: data?.length, status });
+                console.log("Sample data:", data?.slice(0, 3)); // log first few items
+
                 setItems(data ?? []);
-            } catch (err) {
-                console.error("Error:", err);
+            } catch (err: any) {
+                console.error("Fetch failed:", err);
+                setError(err.message || "Failed to load low stock items");
+                setItems([]);
             } finally {
                 setLoading(false);
             }
@@ -65,49 +80,57 @@ export default function LowStockList({ visible, onClose }: Props) {
         fetchLowStock();
     }, [visible]);
 
-    const renderItem = ({ item }: { item: LowStockItem }) => (
-        <View className="py-3 border-b border-gray-200 dark:border-zinc-700">
-            <View className="flex-row justify-between items-center">
-                {/* Left: Product + Variant */}
-                <View className="flex-1 pr-4">
-                    <Text className="font-semibold text-gray-900 dark:text-white">
-                        {item.product_id.name}
-                    </Text>
-                    <View className="flex-row items-center gap-2 mt-1 flex-wrap">
-                        <Text className="text-xs text-gray-500 dark:text-zinc-400">
-                            {item.sku}
+    const renderItem = ({ item }: { item: LowStockItem }) => {
+        const isOutOfStock = item.quantity === 0;
+
+        return (
+            <View className="py-3 border-b border-gray-200 dark:border-zinc-700">
+                <View className="flex-row justify-between items-center">
+                    <View className="flex-1 pr-4">
+                        <Text className="font-semibold text-gray-900 dark:text-white">
+                            {item.product_id.name}
                         </Text>
-                        {item.color && (
-                            <>
-                                <Text className="text-xs text-gray-400 dark:text-zinc-500">•</Text>
-                                <Text className="text-xs font-medium text-gray-600 dark:text-zinc-300">
-                                    {item.color}
-                                </Text>
-                            </>
-                        )}
-                        {item.size && (
-                            <>
-                                <Text className="text-xs text-gray-400 dark:text-zinc-500">•</Text>
-                                <Text className="text-xs font-medium text-gray-600 dark:text-zinc-300">
-                                    {item.size}
-                                </Text>
-                            </>
-                        )}
+                        <View className="flex-row items-center gap-2 mt-1 flex-wrap">
+                            <Text className="text-xs text-gray-500 dark:text-zinc-400">
+                                {item.sku}
+                            </Text>
+                            {item.color && (
+                                <>
+                                    <Text className="text-xs text-gray-400 dark:text-zinc-500">•</Text>
+                                    <Text className="text-xs font-medium text-gray-600 dark:text-zinc-300">
+                                        {item.color}
+                                    </Text>
+                                </>
+                            )}
+                            {item.size && (
+                                <>
+                                    <Text className="text-xs text-gray-400 dark:text-zinc-500">•</Text>
+                                    <Text className="text-xs font-medium text-gray-600 dark:text-zinc-300">
+                                        {item.size}
+                                    </Text>
+                                </>
+                            )}
+                        </View>
+                    </View>
+
+                    <View className="items-end">
+                        <Text
+                            className={`text-2xl font-bold ${
+                                isOutOfStock
+                                    ? "text-red-600 dark:text-red-400"
+                                    : "text-orange-600 dark:text-orange-400"
+                            }`}
+                        >
+                            {item.quantity}
+                        </Text>
+                        <Text className="text-xs text-gray-500 dark:text-zinc-500 -mt-1">
+                            {isOutOfStock ? "out of stock" : "in stock"}
+                        </Text>
                     </View>
                 </View>
-
-                {/* Right: Quantity Badge */}
-                <View className="items-end">
-                    <Text className="text-2xl font-bold text-red-600 dark:text-red-400">
-                        {item.quantity}
-                    </Text>
-                    <Text className="text-xs text-gray-500 dark:text-zinc-500 -mt-1">
-                        in stock
-                    </Text>
-                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <Modal visible={visible} animationType="slide" transparent={false}>
@@ -118,9 +141,11 @@ export default function LowStockList({ visible, onClose }: Props) {
                 <View className="bg-red-600 px-6 pt-14 pb-6">
                     <View className="flex-row justify-between items-center">
                         <View>
-                            <Text className="text-3xl font-bold text-white">Low Stock</Text>
+                            <Text className="text-3xl font-bold text-white">
+                                Low / Out of Stock
+                            </Text>
                             <Text className="text-red-100 text-lg mt-1">
-                                {items.length} {items.length === 1 ? "item" : "items"} below 5 units
+                                {items.length} {items.length === 1 ? "item" : "items"} with ≤5 units
                             </Text>
                         </View>
                         <TouchableOpacity
@@ -132,22 +157,34 @@ export default function LowStockList({ visible, onClose }: Props) {
                     </View>
                 </View>
 
-                {/* List */}
+                {/* Content */}
                 <View className="flex-1 px-5 -mt-4">
                     {loading ? (
                         <View className="flex-1 justify-center items-center">
-                            <ActivityIndicator size="large" color="#ffffff" />
+                            <ActivityIndicator size="large" color="#dc2626" />
                             <Text className="mt-4 text-gray-600 dark:text-zinc-400">
-                                Loading...
+                                Loading low stock items...
+                            </Text>
+                        </View>
+                    ) : error ? (
+                        <View className="flex-1 justify-center items-center px-8">
+                            <Text className="text-xl font-bold text-red-600 dark:text-red-400 text-center">
+                                Error loading data
+                            </Text>
+                            <Text className="text-gray-600 dark:text-zinc-400 mt-4 text-center">
+                                {error}
+                            </Text>
+                            <Text className="text-sm text-gray-500 dark:text-zinc-500 mt-2 text-center">
+                                Check console for details
                             </Text>
                         </View>
                     ) : items.length === 0 ? (
                         <View className="flex-1 justify-center items-center px-8">
                             <Text className="text-2xl font-bold text-gray-800 dark:text-white text-center">
-                                All stocked up
+                                All stocked up!
                             </Text>
                             <Text className="text-gray-500 dark:text-zinc-400 mt-2 text-center">
-                                No items running low right now.
+                                No items with 5 or fewer units in stock.
                             </Text>
                         </View>
                     ) : (

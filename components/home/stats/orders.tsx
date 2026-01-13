@@ -1,10 +1,11 @@
 // components/home/OrdersCard.tsx
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { TouchableOpacity, View, Text, ActivityIndicator } from "react-native";
 import StatCardBase from "@/components/home/StatCardBase";
 import OrdersModal from "@/components/orders/OrdersModal";
 import { supabase } from "@/src/lib/supabaseClient";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { useCallback } from "react"; // ← Add this
 
 export default function OrdersCard() {
     const [modalVisible, setModalVisible] = useState(false);
@@ -12,23 +13,32 @@ export default function OrdersCard() {
     const [completed, setCompleted] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    // ← CRITICAL: Wrap in useCallback to make it stable
+    const fetchStats = useCallback(async () => {
+        setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from("sales")
-                .select("status");
+            const [
+                { count: ongoingCount, error: ongoingError },
+                { count: completedCount, error: completedError }
+            ] = await Promise.all([
+                supabase
+                    .from("sales")
+                    .select("*", { count: "exact", head: true })
+                    .eq("status", "ongoing")
+                    .eq("has_custom_items", true), // ✅ ADD
 
-            if (error) throw error;
+                supabase
+                    .from("sales")
+                    .select("*", { count: "exact", head: true })
+                    .eq("status", "completed")
+                    .eq("has_custom_items", true) // ✅ ADD
+            ]);
 
-            const ongoingCount = data.filter(s => s.status === "ongoing").length;
-            const completedCount = data.filter(s => s.status === "completed").length;
+            if (ongoingError) throw ongoingError;
+            if (completedError) throw completedError;
 
-            setOngoing(ongoingCount);
-            setCompleted(completedCount);
+            setOngoing(ongoingCount ?? 0);
+            setCompleted(completedCount ?? 0);
         } catch (err) {
             console.error("Orders stats error:", err);
             setOngoing(0);
@@ -36,7 +46,9 @@ export default function OrdersCard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+    useAutoRefresh(fetchStats);
+
 
     return (
         <>
@@ -45,7 +57,7 @@ export default function OrdersCard() {
                     {loading ? (
                         <ActivityIndicator color="#ffffff" />
                     ) : (
-                        <View className="items-end justify-end">  {/* Add justify-end */}
+                        <View className="items-end justify-end">
                             {/* Ongoing */}
                             <View className="flex-row items-center gap-1.5 mb-1">
                                 <View className="w-2.5 h-2.5 rounded-full bg-orange-500" />

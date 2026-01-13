@@ -54,31 +54,60 @@ export default function CreateOrderScreen({ goHome }: { goHome: () => void }) {
     const handleSave = async () => {
         if (isSaving) return;
 
-        const finalName = customerType === "company"
-            ? companyName.trim() || attentionName.trim() || "Unnamed Company"
-            : clientName.trim() || "Walk-in CustomersList";
+        // Determine primary display name
+        let displayName: string;
+        if (customerType === "company") {
+            displayName = companyName.trim() || attentionName.trim() || "Unnamed Company";
+        } else {
+            displayName = clientName.trim() || "Walk-in Customer";
+        }
 
-        if (!phone.trim()) return Alert.alert("Error", "Phone number is required");
-        if (!finalName) return Alert.alert("Error", "CustomersList name is required");
-        if (items.every(i => !i.description.trim())) return Alert.alert("Error", "Add at least one item");
+        // Validation
+        if (!phone.trim()) {
+            return Alert.alert("Error", "Phone number is required");
+        }
+        if (items.every(i => !i.description.trim())) {
+            return Alert.alert("Error", "Add at least one item");
+        }
 
         setIsSaving(true);
 
+        let salesPersonId: string | null = null;
+
+        try {
+            // Fetch the currently authenticated user (same pattern as POS)
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (authError) throw authError;
+            if (!authData?.user) {
+                Alert.alert("Error", "You must be logged in to create an order.");
+                return;
+            }
+            salesPersonId = authData.user.id;
+        } catch (err) {
+            console.error("Failed to fetch authenticated user:", err);
+            Alert.alert("Error", "Unable to verify user session.");
+            setIsSaving(false);
+            return;
+        }
+
         try {
             const result = await saveOrder({
+                salesPersonId,  // ← Newly passed
                 customer: {
-                    name: finalName,
+                    name: displayName,
                     p_number: phone.trim(),
                     email: email.trim() || null,
-                    address: address.trim() || null
+                    address: address.trim() || null,
                 },
-                items: items.filter(i => i.description.trim()).map((i, idx) => ({
-                    description: i.description.trim(),
-                    quantity: i.qty,
-                    unit_price: i.unitCost,
-                    total_price: i.qty * i.unitCost,
-                    sort_order: idx,
-                })),
+                items: items
+                    .filter(i => i.description.trim())
+                    .map((i, idx) => ({
+                        description: i.description.trim(),
+                        quantity: i.qty,
+                        unit_price: i.unitCost,
+                        total_price: i.qty * i.unitCost,
+                        sort_order: idx,
+                    })),
                 total,
                 deposit: Number(deposit) || 0,
                 delivery_method: deliveryMethod,
@@ -89,11 +118,13 @@ export default function CreateOrderScreen({ goHome }: { goHome: () => void }) {
                 attentionName: attentionName.trim(),
                 paymentMode,
                 tax_inclusive: taxInclusive,
-                discount_amount:Number(discount) || 0,
+                discount_amount: Number(discount) || 0,
             });
 
             if (result.success) {
-                Alert.alert("Success!", "Order created successfully", [{text: "OK", onPress: goHome}]);
+                Alert.alert("Success!", "Order created successfully", [
+                    { text: "OK", onPress: goHome }
+                ]);
             } else {
                 Alert.alert("Failed", result.error || "Unknown error");
             }
@@ -193,7 +224,9 @@ export default function CreateOrderScreen({ goHome }: { goHome: () => void }) {
     );
 }
 
+// Updated saveOrder function to record the actual logged-in user
 export async function saveOrder(order: {
+    salesPersonId: string;  // ← Added
     customer: { name: string; p_number: string; email: string | null; address: string | null };
     items: any[];
     total: number;
@@ -209,36 +242,61 @@ export async function saveOrder(order: {
     discount_amount?: number;
 }) {
     try {
-        // 1. Get or create customer
         let customerId: string;
-        const { data: existing } = await supabase
+
+        // 1. Try to find existing customer — first by phone, then email
+        let { data: existingCustomer } = await supabase
             .from("customers")
             .select("id")
-            .eq("email", order.customer.email)
+            .eq("p_number", order.customer.p_number)
             .maybeSingle();
 
-        if (existing) {
-            customerId = existing.id;
-        } else {
-            const { data: newCust, error } = await supabase
+        if (!existingCustomer && order.customer.email) {
+            ({ data: existingCustomer } = await supabase
                 .from("customers")
-                .insert({
-                    name: order.customer.name,
-                    companyname: order.customer.name, // ← NEVER NULL
-                    p_number: order.customer.p_number,
-                    email: order.customer.email!.toLowerCase(),
-                    address: order.customer.address,
-                    customer_type: order.customerType,
-                    attention_name: order.customerType === "company" && order.attentionName ? order.attentionName : null,
-                })
+                .select("id")
+                .eq("email", order.customer.email.toLowerCase())
+                .maybeSingle());
+        }
+
+        if (existingCustomer) {
+            customerId = existingCustomer.id;
+            // Optional: update address/email if changed
+        } else {
+            // 2. Create new customer with correct mapping
+            const insertData: any = {
+                p_number: order.customer.p_number,
+                email: order.customer.email ? order.customer.email.toLowerCase() : null,
+                address: order.customer.address || null,
+                customer_type: order.customerType,
+            };
+
+            if (order.customerType === "individual") {
+                insertData.name = order.customer.name.trim();
+                insertData.companyname = "Individual"; // or "" if preferred
+            } else {
+                // Company
+                insertData.companyname = order.companyName || "Unnamed Company";
+                insertData.name = order.attentionName.trim() || order.customer.name.trim();
+            }
+
+            const { data: newCust, error: custErr } = await supabase
+                .from("customers")
+                .insert(insertData)
                 .select("id")
                 .single();
 
-            if (error) throw error;
+            if (custErr) {
+                if (custErr.code === "23505") {
+                    return { success: false, error: "A customer with this phone or email already exists." };
+                }
+                throw custErr;
+            }
+
             customerId = newCust.id;
         }
 
-        // 2. Create sale — ALL REQUIRED FIELDS
+        // 3. Create the sale — now with the authenticated user's ID
         const { data: sale, error: saleErr } = await supabase
             .from("sales")
             .insert({
@@ -250,26 +308,29 @@ export async function saveOrder(order: {
                 delivery_fee: order.delivery_fee,
                 expected_delivery_date: order.expected_delivery_date,
                 has_custom_items: true,
-                payment_mode: order.paymentMode.toLowerCase(),
+                payment_mode: order.paymentMode,
                 discount_amount: order.discount_amount || 0,
-                tax_inclusive: order.tax_inclusive// This one IS required
+                tax_inclusive: order.tax_inclusive,
+                sales_person_id: order.salesPersonId,  // ← Saved here
             })
             .select("id")
             .single();
 
         if (saleErr) throw saleErr;
 
-        // 3. Save items
+        // 4. Insert custom sale items
         if (order.items.length > 0) {
+            const itemsToInsert = order.items.map((i: any) => ({
+                sale_id: sale.id,
+                description: i.description,
+                quantity: i.quantity,
+                unit_price: i.unit_price,
+                sort_order: i.sort_order,
+            }));
+
             const { error: itemsErr } = await supabase
                 .from("custom_sale_items")
-                .insert(order.items.map(i => ({
-                    sale_id: sale.id,
-                    description: i.description,
-                    quantity: i.quantity,
-                    unit_price: i.unit_price,
-                    sort_order: i.sort_order,
-                })));
+                .insert(itemsToInsert);
 
             if (itemsErr) throw itemsErr;
         }
@@ -277,6 +338,6 @@ export async function saveOrder(order: {
         return { success: true, sale_id: sale.id };
     } catch (error: any) {
         console.error("saveOrder error:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: error.message || "Failed to save order" };
     }
 }

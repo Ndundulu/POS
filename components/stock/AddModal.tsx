@@ -189,7 +189,7 @@ export default function AddModal({
                                     style={{ color: textPrimary }}
                                 />
                                 <TextInput
-                                    placeholder="Motif"
+                                    placeholder="Motif/Pattern on the product"
                                     value={itemMotif}
                                     onChangeText={setItemMotif}
                                     placeholderTextColor="#999"

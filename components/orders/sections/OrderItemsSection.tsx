@@ -21,30 +21,30 @@ export default function OrderItemsSection({ items, setItems }: any) {
     const inputBorder = isDark ? "border-slate-600" : "border-gray-300";
 
     return (
-        <View className={`p-6 rounded-2xl ${bgCard} shadow-lg border ${borderColor} mb-8`}>
-            <View className="flex-row items-center gap-3 mb-6">
-                <Package size={26} color="#b89d63" />
-                <Text className={`text-2xl font-bold ${textPrimary}`}>Items</Text>
+        <View className={`p-4 rounded-2xl ${bgCard} shadow-md border ${borderColor} mb-6`}>
+            <View className="flex-row items-center gap-2 mb-4">
+                <Package size={22} color="#b89d63" />
+                <Text className={`text-xl font-bold ${textPrimary}`}>Items</Text>
             </View>
 
             {items.map((item: any, index: number) => (
-                <View key={item.id} className="mb-6 pb-6 border-b border-gray-600/20 last:border-0 last:pb-0 last:mb-0">
+                <View key={item.id} className="mb-4 pb-4 border-b border-gray-600/20 last:border-0 last:pb-0 last:mb-0">
                     <TextInput
                         placeholder="Item description"
                         placeholderTextColor={isDark ? "#64748b" : "#9ca3af"}
                         value={item.description}
                         onChangeText={(v) => updateItem(item.id, "description", v)}
-                        className={`px-5 py-4 rounded-2xl text-lg font-medium ${inputBg} border ${inputBorder} ${textPrimary}`}
+                        className={`px-4 py-3 rounded-lg text-base font-medium ${inputBg} border ${inputBorder} ${textPrimary}`}
                     />
 
-                    <View className="flex-row gap-3 mt-4">
+                    <View className="flex-row gap-3 mt-3">
                         <TextInput
                             placeholder="Qty"
                             placeholderTextColor={isDark ? "#64748b" : "#9ca3af"}
                             value={String(item.qty)}
                             onChangeText={(v) => updateItem(item.id, "qty", v)}
                             keyboardType="numeric"
-                            className={`flex-1 px-5 py-4 rounded-2xl text-lg font-bold text-center ${inputBg} border ${inputBorder} ${textPrimary}`}
+                            className={`flex-1 px-4 py-3 rounded-lg text-base font-bold text-center ${inputBg} border ${inputBorder} ${textPrimary}`}
                         />
                         <TextInput
                             placeholder="Unit Cost"
@@ -52,19 +52,19 @@ export default function OrderItemsSection({ items, setItems }: any) {
                             value={String(item.unitCost)}
                             onChangeText={(v) => updateItem(item.id, "unitCost", v)}
                             keyboardType="numeric"
-                            className={`flex-1 px-5 py-4 rounded-2xl text-lg font-bold text-right ${inputBg} border ${inputBorder} ${textPrimary}`}
+                            className={`flex-1 px-4 py-3 rounded-lg text-base font-bold text-right ${inputBg} border ${inputBorder} ${textPrimary}`}
                         />
                         {items.length > 1 && (
                             <TouchableOpacity
                                 onPress={() => removeItem(item.id)}
-                                className="bg-red-600/90 p-4 rounded-2xl justify-center shadow-lg active:opacity-80"
+                                className="bg-red-600/90 p-3 rounded-lg justify-center shadow-md active:opacity-80"
                             >
-                                <Trash2 size={22} color="white" />
+                                <Trash2 size={20} color="white" />
                             </TouchableOpacity>
                         )}
                     </View>
 
-                    <Text className="text-right mt-3 text-xl font-bold text-navy">
+                    <Text className="text-right mt-2 text-lg font-bold text-navy">
                         KES {(item.qty * item.unitCost).toLocaleString()}
                     </Text>
                 </View>
@@ -72,10 +72,10 @@ export default function OrderItemsSection({ items, setItems }: any) {
 
             <TouchableOpacity
                 onPress={addItem}
-                className="flex-row items-center justify-center gap-3 py-5 rounded-2xl bg-navy/10 border-2 border-dashed border-navy mt-4 active:opacity-80"
+                className="flex-row items-center justify-center gap-2 py-3 rounded-lg bg-navy/10 border-2 border-dashed border-navy mt-3 active:opacity-80"
             >
-                <Plus size={24} color="#283A55" />
-                <Text className="text-navy font-bold text-lg">Add Another Item</Text>
+                <Plus size={20} color="#283A55" />
+                <Text className="text-navy font-bold text-base">Add Another Item</Text>
             </TouchableOpacity>
         </View>
     );

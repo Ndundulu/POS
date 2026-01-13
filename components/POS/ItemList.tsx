@@ -1,6 +1,6 @@
 // src/components/POS/ItemList.tsx
-import React, { useContext } from 'react';
-import {View, Text, TouchableOpacity, SectionList, useColorScheme} from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, SectionList, useColorScheme } from 'react-native';
 import { Item } from './ItemSearch';
 
 type GroupedItem = {
@@ -16,6 +16,7 @@ type Props = {
 export default function ItemList({ items, onAdd }: Props) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+
     // Group items by product name
     const grouped: GroupedItem[] = items.reduce((acc: GroupedItem[], item) => {
         let group = acc.find((g) => g.productName === item.name);
@@ -55,15 +56,18 @@ export default function ItemList({ items, onAdd }: Props) {
                     disabled={item.quantity === 0}
                     activeOpacity={0.7}
                     className={`
-            flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800
+            flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-800
             ${item.quantity === 0 ? 'opacity-50' : ''}
           `}
                 >
-                    {/* Variant Details */}
+                    {/* Variant Details: Color + Size on first line, SKU below */}
                     <View className="flex-1 mr-3">
-                        <Text className="text-sm text-gray-600 dark:text-gray-600 font-medium">
+                        <Text className="text-base font-medium text-gray-800 dark:text-gray-200">
                             {item.color}
                             {item.size && ` • ${item.size}`}
+                        </Text>
+                        <Text className="text-sm text-gray-500 dark:text-gray-500 mt-0.5">
+                            {item.sku}
                         </Text>
                     </View>
 

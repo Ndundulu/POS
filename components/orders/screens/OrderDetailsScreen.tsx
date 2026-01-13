@@ -333,8 +333,8 @@ export default function OrderDetailsScreen({
                     <Text className={`text-lg font-semibold ${textPrimary}`}>
                         {order.customers.companyname || order.customers.name}
                     </Text>
-                    {order.customers.attention_name && (
-                        <Text className={textSecondary}>Attn: {order.customers.attention_name}</Text>
+                    {order.customers.companyname && (
+                        <Text className={textSecondary}>Attn: {order.customers.name}</Text>
                     )}
                     <Text className={`mt-3 ${textSecondary}`}>{order.customers.p_number}</Text>
                     {order.customers.email && <Text className={textSecondary}>{order.customers.email}</Text>}

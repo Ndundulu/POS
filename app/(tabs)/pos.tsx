@@ -13,12 +13,12 @@ import { useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import ItemSearch from '@/components/POS/ItemSearch';
-import PriceSummary from '@/components/POS/PriceSummary';
 import ClientInfo from '@/components/POS/ClientInfo';
 import CartList from '@/components/POS/CartList';
 import CheckoutModal from '@/components/POS/CheckoutModal';
 import CheckoutButton from '@/components/POS/Checkout';
-import {supabase} from "@/src/lib/supabaseClient"; // This now just opens modal
+import {supabase} from "@/src/lib/supabaseClient";
+import PriceSummaryWithDiscountAndTax from "@/components/POS/PriceSummary";
 
 type Item = {
     id: string;
@@ -32,13 +32,40 @@ type Item = {
     maxQty: number;
 };
 
+type PricingState = {
+    subtotal: number;
+    discount: number;
+    tax: number;
+    total: number;
+    taxInclusive: boolean;
+};
+
 export default function PosScreen({ cashierId }: { cashierId: string }) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const [cart, setCart] = useState<Item[]>([]);
-    const [client, setClient] = useState<{ name?: string; phone?: string; email?: string } | undefined>();
+    const [client, setClient] = useState<{
+        customerId?: string;
+        customerType?: 'individual' | 'company';
+        name?: string;
+        companyName?: string;
+        attentionName?: string;
+        phone?: string;
+        email?: string;
+    }>({
+        customerType: 'individual',
+    });
     const [checkoutVisible, setCheckoutVisible] = useState(false);
+
+    // ← NEW: Lifted pricing state – single source of truth
+    const [pricing, setPricing] = useState<PricingState>({
+        subtotal: 0,
+        discount: 0,
+        tax: 0,
+        total: 0,
+        taxInclusive: false,
+    });
 
     const bg = isDark ? 'bg-black' : 'bg-cream';
     const cardBg = isDark ? 'bg-[#1A1A1A]' : 'bg-white';
@@ -86,10 +113,10 @@ export default function PosScreen({ cashierId }: { cashierId: string }) {
         });
     };
 
-// State to store cashierId
+    // State to store cashierId
     const [checkoutCashierId, setCheckoutCashierId] = useState<string | null>(null);
 
-// Open Checkout Modal
+    // Open Checkout Modal
     const openCheckout = async () => {
         if (!cart.length) {
             Alert.alert('Cart is empty', 'Add items before checkout.');
@@ -104,7 +131,7 @@ export default function PosScreen({ cashierId }: { cashierId: string }) {
                 return;
             }
 
-            const cashierId = data.user.id; // ✅ this is the correct user id
+            const cashierId = data.user.id;
             setCheckoutCashierId(cashierId);
             setCheckoutVisible(true);
         } catch (err) {
@@ -113,7 +140,6 @@ export default function PosScreen({ cashierId }: { cashierId: string }) {
         }
     };
 
-    console.log(checkoutCashierId)
     // Close modal & clear cart if checkout completed
     const handleCheckoutClose = () => {
         setCheckoutVisible(false);
@@ -141,8 +167,12 @@ export default function PosScreen({ cashierId }: { cashierId: string }) {
                             <CartList cart={cart} onRemoveItem={handleRemoveItem} />
                         </View>
 
+                        {/* ← UPDATED: New component + callback to lift pricing state */}
                         <View className={`rounded-2xl p-4 mb-4 ${cardBg} shadow-lg`}>
-                            <PriceSummary cart={cart} />
+                            <PriceSummaryWithDiscountAndTax
+                                cart={cart}
+                                onPricingChange={setPricing}
+                            />
                         </View>
 
                         <View className={`rounded-2xl p-4 mb-6 ${cardBg} shadow-lg`}>
@@ -156,13 +186,14 @@ export default function PosScreen({ cashierId }: { cashierId: string }) {
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
 
-            {/* Checkout Modal */}
+            {/* ← UPDATED: Pass the authoritative pricing state to CheckoutModal */}
             <CheckoutModal
                 visible={checkoutVisible}
                 cart={cart}
                 client={client}
+                cashierId={checkoutCashierId!}
+                pricing={pricing}
                 onClose={handleCheckoutClose}
-                cashierId={checkoutCashierId!} // Make sure this is not null
             />
         </SafeAreaView>
     );

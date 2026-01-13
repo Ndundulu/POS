@@ -30,9 +30,9 @@ export default function DeliverySection({
     const isDark = colorScheme === "dark";
 
     const methods = [
-        { label: "Pickup Truck", value: "Pickup truck delivery" as DeliveryMethodType, icon: Truck },
+        { label: "Truck", value: "Pickup truck delivery" as DeliveryMethodType, icon: Truck },
         { label: "Rider", value: "Rider" as DeliveryMethodType, icon: Bike },
-        { label: "Collection", value: "Collection" as DeliveryMethodType, icon: Store },
+        { label: "Collect", value: "Collection" as DeliveryMethodType, icon: Store },
     ];
 
     const bgCard = isDark ? "bg-slate-800/70" : "bg-white";
@@ -42,16 +42,16 @@ export default function DeliverySection({
     const inputBg = isDark ? "bg-slate-700/60" : "bg-gray-50";
 
     return (
-        <View className={`p-6 rounded-2xl ${bgCard} shadow-lg border ${borderColor} mb-6`}>
+        <View className={`p-4 rounded-2xl ${bgCard} shadow-md border ${borderColor} mb-6`}>
             {/* Header */}
-            <View className="flex-row items-center gap-3 mb-6">
-                <Truck size={26} color="#b89d63" />
-                <Text className={`text-2xl font-bold ${textPrimary}`}>Delivery</Text>
+            <View className="flex-row items-center gap-2 mb-4">
+                <Truck size={22} color="#b89d63" />
+                <Text className={`text-xl font-bold ${textPrimary}`}>Delivery</Text>
             </View>
 
             {/* Delivery Method */}
-            <Text className={`font-bold mb-4 ${textPrimary}`}>Delivery Method</Text>
-            <View className="flex-row flex-wrap gap-3 mb-6">
+            <Text className={`font-bold mb-3 ${textPrimary}`}>Delivery Method</Text>
+            <View className="flex-row flex-wrap gap-3 mb-4">
                 {methods.map((m) => {
                     const Active = deliveryMethod === m.value;
                     const IconComp = m.icon;
@@ -60,7 +60,7 @@ export default function DeliverySection({
                         <TouchableOpacity
                             key={m.value}
                             onPress={() => setDeliveryMethod(m.value)}
-                            className={`flex-row items-center px-5 py-3 rounded-xl ${
+                            className={`flex-row items-center px-4 py-2.5 rounded-lg ${
                                 Active
                                     ? "bg-blue-600"
                                     : isDark
@@ -68,8 +68,8 @@ export default function DeliverySection({
                                         : "bg-gray-200"
                             }`}
                         >
-                            <IconComp size={22} color={Active ? "white" : "#666"} />
-                            <Text className={`ml-3 font-bold text-lg ${Active ? "text-white" : textSecondary}`}>
+                            <IconComp size={20} color={Active ? "white" : "#666"} />
+                            <Text className={`ml-2 font-bold text-base ${Active ? "text-white" : textSecondary}`}>
                                 {m.label}
                             </Text>
                         </TouchableOpacity>
@@ -78,7 +78,7 @@ export default function DeliverySection({
             </View>
 
             {/* Expected Delivery Date */}
-            <Text className={`font-semibold mb-3 ${textPrimary}`}>Expected Delivery Date</Text>
+            <Text className={`font-semibold mb-2 ${textPrimary}`}>Expected Delivery Date</Text>
             <TouchableOpacity
                 onPress={() => setShowPicker(true)}
                 className={`flex-row items-center border ${borderColor} rounded-lg px-4 py-3 mb-4 ${inputBg}`}
@@ -100,7 +100,7 @@ export default function DeliverySection({
             )}
 
             {/* Delivery Fee */}
-            <Text className={`font-semibold mb-3 ${textPrimary}`}>Delivery Fee</Text>
+            <Text className={`font-semibold mb-2 ${textPrimary}`}>Delivery Fee</Text>
             <TextInput
                 placeholder="0"
                 value={deliveryFee}
@@ -112,5 +112,4 @@ export default function DeliverySection({
         </View>
     );
 }
-
 
