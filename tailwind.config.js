@@ -1,11 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "class", // REQUIRED for NativeWind v5
+  darkMode: "class",
 
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./src/**/*.{js,ts,jsx,tsx}",  // if you use src folder
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",           // if you have src/
+    "./(auth)/**/*.{js,ts,jsx,tsx,mdx}",        // grouped routes
+    "./(tabs)/**/*.{js,ts,jsx,tsx,mdx}",
   ],
 
   presets: [require("nativewind/preset")],
@@ -19,11 +21,11 @@ module.exports = {
         tan: "#b8a48c",
         danger: "#dc2626",
         cardLight: "#ffffff",
-        cardDark: "#1e293b",     // slate-800
-        backgroundDark: "#0f172a", // slate-900/95
-        textLightPrimary: '#283A55',
-        textLightSecondary: '#555555',
-        textDarkSecondary: '#bbbbbb',
+        cardDark: "#1e293b",
+        backgroundDark: "#0f172a",
+        textLightPrimary: "#283A55",
+        textLightSecondary: "#555555",
+        textDarkSecondary: "#bbbbbb",
         primary: "#283A55",
         "primary-light": "#ffffff",
       },
@@ -37,7 +39,6 @@ module.exports = {
         "2xl": "1rem",
         "3xl": "1.5rem",
       },
-
     },
   },
 
